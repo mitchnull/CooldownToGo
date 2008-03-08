@@ -1,6 +1,6 @@
 --[[
 Name: CooldownToGo
-Revision: $Revision: 47733 $
+Revision: $Revision$
 Author(s): mitch0
 Website: 
 Documentation: 
@@ -10,7 +10,7 @@ Dependencies:
 License: Public Domain
 ]]
 
-local VERSION = "CooldownToGo-r" .. ("$Revision: 47733 $"):match("%d+")
+local VERSION = "CooldownToGo-r" .. ("$Revision$"):match("%d+")
 
 local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
