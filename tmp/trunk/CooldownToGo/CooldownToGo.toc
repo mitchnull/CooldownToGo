@@ -1,5 +1,5 @@
 ﻿## Interface: 20300
-## Title: CooldownToGo 1.0
+## Title: CooldownToGo
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
 ## Version: 1.0
@@ -10,5 +10,8 @@
 ## X-Category: Combat
 ## X-License: Public Domain
 
+embeds.xml
+
 localization-enUS.lua
+
 CooldownToGo.lua
