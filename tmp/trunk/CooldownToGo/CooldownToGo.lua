@@ -230,6 +230,7 @@ function CooldownToGo:applySettings()
 	end
 	self.cdtgFrame:SetTextColor(db.colorR, db.colorG, db.colorB)
 	self.cdtgFrame:SetTimeVisible(db.holdTime)
+	self.cdtgFrame:Show()
 end
 
 function CooldownToGo:lock()
@@ -239,7 +240,6 @@ end
 
 function CooldownToGo:unlock()
 	self.cdtgFrame:EnableMouse(true)
-	self.cdtgFrame:Show()
 	self.cdtgFrameBG:Show()
 end
 
