@@ -12,7 +12,6 @@
 ## X-License: Public Domain
 
 embeds.xml
-
-localization-enUS.lua
+localizations\localizations.xml
 
 CooldownToGo.lua
