@@ -16,8 +16,7 @@ local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("CooldownToGo")
 local AppName = "CooldownToGo"
-local SML = LibStub:GetLibrary("LibSharedMedia-2.0", true);
-local SML = nil -- TODO: SML stuff is broken somehow, need time to find out what I do wrong
+local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
 local db
 
 CooldownToGo = LibStub("AceAddon-3.0"):NewAddon("CooldownToGo", "AceConsole-3.0", "AceHook-3.0")
@@ -28,13 +27,7 @@ local MaxFontSize = 40
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
 
-local Fonts
-if (SML) then
---	SML:Register("font", DefaultFontName, DefaultFontPath)
-	Fonts = SML:List("font")
-else
-	Fonts = { [1] = DefaultFontName }
-end
+local Fonts = SML and SML:List("font") or { [1] = DefaultFontName }
 
 local FontOutlines = {
 	[""] = L["None"],
@@ -138,7 +131,7 @@ local options = {
 			desc = L["Bring up GUI configure dialog"],
 			guiHidden = true,
 			order = 300,
-			func = function() self:OpenConfigDialog() end,
+			func = function() CooldownToGo:OpenConfigDialog() end,
 		},
 	},
 }

@@ -6,6 +6,7 @@
 ## DefaultState: Enabled
 ## SavedVariables: CooldownToGoDB
 ## LoadManagers: AddonLoader
+## OptionalDeps: LibSharedMedia-3.0
 ## X-LoadOn-Always: delayed
 ## X-Category: Combat
 ## X-License: Public Domain
