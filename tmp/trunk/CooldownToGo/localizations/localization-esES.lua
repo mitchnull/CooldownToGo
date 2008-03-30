@@ -5,6 +5,10 @@ if not L then return end
 -- L["Lock/Unlock display frame"] = true
 -- L["Hold time"] = true
 -- L["Time to hold the message in seconds"] = true
+-- L["Fade time"] = true
+-- L["Fade time of the message in seconds"] = true
+-- L["Ready time"] = true
+-- L["Show the cooldown again this many seconds before the cooldown expires"] = true
 -- L["Font"] = true
 -- L["Default"] = true
 -- L["Font size"] = true
