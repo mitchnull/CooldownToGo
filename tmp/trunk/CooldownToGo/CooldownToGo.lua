@@ -18,6 +18,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale("CooldownToGo")
 local AppName = "CooldownToGo"
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
 local db
+local _ -- throwaway
 
 -- cache
 
