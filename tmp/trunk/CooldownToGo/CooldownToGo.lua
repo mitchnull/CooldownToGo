@@ -68,6 +68,14 @@ local DefaultFontPath = GameFontNormal:GetFont()
 
 local Fonts = SML and SML:List("font") or { [1] = DefaultFontName }
 
+local function getFonts()
+	local res = {}
+	for i, v in ipairs(Fonts) do
+		res[v] = v
+	end
+	return res
+end
+
 local FontOutlines = {
 	[""] = L["None"],
 	["OUTLINE"] = L["Normal"],
@@ -150,7 +158,7 @@ local options = {
 			type = 'select',
 			name = L["Font"],
 			desc = L["Font"],
-			values = Fonts,
+			values = getFonts,
 			order = 135
 		},
 		fontSize = {
