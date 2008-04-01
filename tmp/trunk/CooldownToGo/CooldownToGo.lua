@@ -35,6 +35,14 @@ local GetContainerItemInfo = GetContainerItemInfo
 local GetPetActionCooldown = GetPetActionCooldown
 local GetPetActionInfo = GetPetActionInfo
 
+-- hard-coded config stuff
+
+local UpdateDelay = .1 -- update frequency == 1/UpdateDelay
+local MinFontSize = 5
+local MaxFontSize = 40
+local DefaultFontName = "Friz Quadrata TT"
+local DefaultFontPath = GameFontNormal:GetFont()
+
 -- internal vars
 
 local db
@@ -49,6 +57,7 @@ local getCurrCooldown
 local currArg1
 local currArg2
 
+local needUpdate = false
 local isActive = false
 local isAlmostReady = false
 local isReady = false
@@ -58,14 +67,6 @@ local GCD = 1.5
 
 CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
 CooldownToGo:SetDefaultModuleState(false)
-
--- hard-coded config stuff
-
-local UpdateDelay = .1 -- update frequency == 1/UpdateDelay
-local MinFontSize = 5
-local MaxFontSize = 40
-local DefaultFontName = "Friz Quadrata TT"
-local DefaultFontPath = GameFontNormal:GetFont()
 
 local Fonts = SML and SML:List("font") or { [1] = DefaultFontName }
 
@@ -382,6 +383,13 @@ function CooldownToGo:OnUpdate(elapsed)
 	if (not isActive) then
 		return
 	end
+	if (needUpdate) then
+		needUpdate = false
+		local start, duration = getCurrCooldown(currArg1, currArg2)
+		if (currStart ~= start or currDuration ~= duration) then
+			self:updateStamps(start, duration, false)
+		end
+	end
 	local now = GetTime()
 	if (now > finishStamp) then
 		isActive = false
@@ -394,13 +402,13 @@ function CooldownToGo:OnUpdate(elapsed)
 		if (not isReady) then
 			isReady = true
 			self.text:SetText(L["Ready"])
-			self:updateStamps(currStart, currDuration)
+			self:updateStamps(currStart, currDuration, true)
 --	TODO:	PlaySound()
 		end
 	else
 		local cd = endStamp - now
 		if (cd <= db.readyTime and not isAlmostReady) then
-			self:updateStamps(currStart, currDuration)
+			self:updateStamps(currStart, currDuration, true)
 			isAlmostReady = true
 		end
 		if cd > 90 then
@@ -422,7 +430,7 @@ function CooldownToGo:OnUpdate(elapsed)
 	end
 end
 
-function CooldownToGo:updateStamps(start, duration)
+function CooldownToGo:updateStamps(start, duration, show)
 	currStart = start
 	currDuration = duration
 	local now = GetTime()
@@ -439,15 +447,17 @@ function CooldownToGo:updateStamps(start, duration)
 	hideStamp = fadeStamp + db.fadeTime
 
 	lastUpdate = UpdateDelay -- to force update in next frame
-	isHidden = false
 	isAlmostReady = false
-	self.frame:SetAlpha(1)
-	self.frame:Show()
+	if (show) then
+		isHidden = false
+		self.frame:SetAlpha(1)
+		self.frame:Show()
+	end
 end
 
 function CooldownToGo:showCooldown(texture, getCooldownFunc, arg1, arg2)
 	local start, duration, enabled = getCooldownFunc(arg1, arg2)
---	print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
+	-- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
 	if (not enabled) or (not start) or (not duration) or (duration <= GCD) then
 		return
 	end
@@ -456,7 +466,7 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg1, arg2)
 	isReady = false
 	isAlmostReady = false
 	self.icon:SetTexture(texture)
-	self:updateStamps(start, duration)
+	self:updateStamps(start, duration, true)
 end
 
 function CooldownToGo:checkSpellCooldown(spellIdx, bookType)
@@ -495,12 +505,8 @@ function CooldownToGo:checkPetActionCooldown(index)
 end
 
 function CooldownToGo:updateCooldown(event)
-	if (not isActive) then
+	if (not isActive or isReady) then
 		return
 	end
-	local start, duration = getCurrCooldown(currArg1, currArg2)
-	if (currStart == start and currDuration == duration) then
-		return
-	end
-	self:updateStamps(start, duration)
+	needUpdate = true
 end
