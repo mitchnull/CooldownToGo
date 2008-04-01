@@ -11,6 +11,8 @@
 ## X-LoadOn-Always: delayed
 ## X-Category: Combat
 ## X-License: Public Domain
+## X-AceForum: 12422
+## X-RelSite-WoWI:
 
 embeds.xml
 localizations\localizations.xml

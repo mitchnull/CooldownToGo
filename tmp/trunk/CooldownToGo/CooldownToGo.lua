@@ -2,23 +2,21 @@
 Name: CooldownToGo
 Revision: $Revision$
 Author(s): mitch0
-Website: 
-Documentation: 
+Website: http://www.wowace.com/wiki/CooldownToGo
+Documentation: http://www.wowace.com/wiki/CooldownToGo
 SVN: http://svn.wowace.com/wowace/trunk/CooldownToGo/
 Description: Display the reamining cooldown on the last action you tried to use
 Dependencies:
 License: Public Domain
 ]]
 
-local VERSION = "CooldownToGo-r" .. ("$Revision$"):match("%d+")
+local AppName = "CooldownToGo"
+local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("CooldownToGo")
-local AppName = "CooldownToGo"
+local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
-local db
-local _ -- throwaway
 
 -- cache
 
@@ -38,6 +36,8 @@ local GetPetActionInfo = GetPetActionInfo
 
 -- internal vars
 
+local db
+local _ -- throwaway
 local lastUpdate = 0 -- time since last real update
 local fadeStamp -- the timestamp when we should start fading the display
 local hideStamp -- the timestamp when we should hide the display
@@ -55,7 +55,7 @@ local isHidden
 
 local GCD = 1.5
 
-CooldownToGo = LibStub("AceAddon-3.0"):NewAddon("CooldownToGo", "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
+CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
 CooldownToGo:SetDefaultModuleState(false)
 
 -- hard-coded config stuff
@@ -116,7 +116,7 @@ end
 
 local options = {
 	type = "group",
-	name = "CooldownToGo",
+	name = AppName,
 	handler = CooldownToGo,
 	get = function(info) return db[info[#info]] end,
 	set = "setOption",
