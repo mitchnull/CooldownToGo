@@ -15,6 +15,7 @@ local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
+local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
 
@@ -210,7 +211,7 @@ function CooldownToGo:OpenConfigDialog()
 	if not f then
 		f = ACD.OpenFrames[AppName]
 		f:SetWidth(400)
-		f:SetHeight(500)
+		f:SetHeight(600)
 	end
 end
 
@@ -324,12 +325,30 @@ function CooldownToGo:unlock()
 	self.frame:Show()
 end
 
+function CooldownToGo:addConfigTab(key, group, order, isCmdInline)
+	if (not self.configOptions) then
+		self.configOptions = {
+			type = "group",
+			name = AppName,
+			childGroups = "tab",
+			args = {},
+		}
+	end
+	self.configOptions.args[key] = group
+	self.configOptions.args[key].order = order
+	self.configOptions.args[key].cmdInline = isCmdInline
+end
+
 function CooldownToGo:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
-	self.configOptions = options
-	AceConfig:RegisterOptionsTable(AppName, options, "cdtg")
 	db = self.db.profile
-	self:createFrame()
+	self:addConfigTab('main', options, 10, true)
+	self:addConfigTab('profiles', AceDBOptions:GetOptionsTable(self.db), 20, false)
+	AceConfig:RegisterOptionsTable(AppName, self.configOptions, "cdtg")
+	ACD:AddToBlizOptions(AppName)
+	if (not self.frame) then
+		self:createFrame()
+	end
 end
 
 function CooldownToGo:OnEnable(first)
