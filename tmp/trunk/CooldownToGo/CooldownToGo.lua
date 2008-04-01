@@ -324,6 +324,7 @@ function CooldownToGo:unlock()
 	self.frame:EnableMouse(true)
 	self.frameBG:Show()
 	self.frame:Show()
+	self.frame:SetAlpha(1)
 end
 
 function CooldownToGo:addConfigTab(key, group, order, isCmdInline)
@@ -416,6 +417,9 @@ function CooldownToGo:OnUpdate(elapsed)
 		else
 			self.text:SetText(string.format("%.1f", cd))
 		end
+	end
+	if (not db.locked) then
+		return
 	end
 	if (now > fadeStamp) then
 		local alpha = 1 - ((now - fadeStamp) / db.fadeTime)
