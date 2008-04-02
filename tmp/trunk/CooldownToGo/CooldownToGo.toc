@@ -12,7 +12,7 @@
 ## X-Category: Combat
 ## X-License: Public Domain
 ## X-AceForum: 12422
-## X-RelSite-WoWI:
+## X-RelSite-WoWI: 8601
 
 embeds.xml
 localizations\localizations.xml
