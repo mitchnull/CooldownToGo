@@ -291,6 +291,31 @@ function CooldownToGo:setColor(info, r, g, b)
 	end
 end
 
+function CooldownToGo:applyFontSettings(isCallback)
+	local dbFontPath
+	if (SML) then
+		dbFontPath = SML:Fetch("font", db.font, true)
+		if (not dbFontPath) then
+			if (isCallback) then
+				return
+			end
+			SML.RegisterCallback(self, "LibSharedMedia_Registered", "applyFontSettings", true)
+			dbFontPath = DefaultFontPath
+		else
+			SML.UnregisterCallback(self, "LibSharedMedia_Registered")
+		end
+	else
+		dbFontPath = DefaultFontPath
+	end
+	local fontPath, fontSize, fontOutline = self.text:GetFont()
+	fontOutline = fontOutline or ""
+	if (dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline) then
+		self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
+	end
+	self.icon:SetHeight(fontSize)
+	self.icon:SetWidth(fontSize)
+end
+
 function CooldownToGo:applySettings()
 	if (not self:IsEnabled()) then return end
 	if (db.locked) then
@@ -301,15 +326,8 @@ function CooldownToGo:applySettings()
 	self.frame:ClearAllPoints()
 	self.frame:SetPoint(db.point, UIParent, db.relPoint, db.x, db.y)
 	self.frame:SetFrameStrata(db.strata)
-	local dbFontPath = SML and SML:Fetch("font", db.font) or DefaultFontPath
-	local fontPath, fontSize, fontOutline = self.text:GetFont()
-	fontOutline = fontOutline or ""
-	if (dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline) then
-		self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
-	end
 	self.text:SetTextColor(db.colorR, db.colorG, db.colorB)
-	self.icon:SetHeight(fontSize)
-	self.icon:SetWidth(fontSize)
+	self:applyFontSettings()
 end
 
 function CooldownToGo:lock()
