@@ -61,7 +61,7 @@ local needUpdate = false
 local isActive = false
 local isAlmostReady = false
 local isReady = false
-local isHidden
+local isHidden = false
 
 local GCD = 1.5
 
@@ -333,7 +333,9 @@ end
 function CooldownToGo:lock()
 	self.frame:EnableMouse(false)
 	self.frameBG:Hide()
-	if (not isActive) then
+	if (isActive) then
+		self:updateStamps(currStart, currDuration, true)
+	else
 		self.frame:Hide()
 	end
 end
@@ -343,6 +345,7 @@ function CooldownToGo:unlock()
 	self.frameBG:Show()
 	self.frame:Show()
 	self.frame:SetAlpha(1)
+	isHidden = false
 end
 
 function CooldownToGo:addConfigTab(key, group, order, isCmdInline)
@@ -361,6 +364,7 @@ end
 
 function CooldownToGo:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
+	self.db.RegisterCallback(self, "OnProfileChanged")
 	db = self.db.profile
 	self:addConfigTab('main', options, 10, true)
 	self:addConfigTab('profiles', AceDBOptions:GetOptionsTable(self.db), 20, false)
@@ -372,7 +376,7 @@ function CooldownToGo:OnInitialize()
 end
 
 function CooldownToGo:OnEnable(first)
-	self:OnProfileEnable()
+	self:OnProfileChanged()
 	self:SecureHook("CastSpell", "checkSpellCooldown")
 	self:SecureHook("CastSpellByName", "checkSpellCooldownByName")
 	self:SecureHook("UseAction", "ckeckActionCooldown")
@@ -393,7 +397,7 @@ function CooldownToGo:OnDisable()
 	self:UnregisterAllEvents()
 end
 
-function CooldownToGo:OnProfileEnable()
+function CooldownToGo:OnProfileChanged()
 	db = self.db.profile
 	self:applySettings()
 end
@@ -411,10 +415,12 @@ function CooldownToGo:OnUpdate(elapsed)
 	end
 	local now = GetTime()
 	if (now > finishStamp) then
-		isActive = false
 		if (db.locked) then
 			self.frame:Hide()
 		end
+		isActive = false
+		self.text:SetText(nil)
+		self.icon:SetTexture(nil)
 		return
 	end
 	if (now >= endStamp) then
