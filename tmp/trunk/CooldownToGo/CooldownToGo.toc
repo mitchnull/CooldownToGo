@@ -3,12 +3,11 @@
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
 ## Version: 1.0
-## DefaultState: Enabled
 ## SavedVariables: CooldownToGoDB
 ## LoadManagers: AddonLoader
 ## OptionalDeps: LibSharedMedia-3.0
 ## X-Embeds: Ace3
-## X-LoadOn-Always: delayed
+## X-LoadOn-Always: true
 ## X-Category: Combat
 ## X-License: Public Domain
 ## X-AceForum: 12422
