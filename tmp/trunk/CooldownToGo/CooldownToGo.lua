@@ -368,7 +368,7 @@ function CooldownToGo:OnInitialize()
 	db = self.db.profile
 	self:addConfigTab('main', options, 10, true)
 	self:addConfigTab('profiles', AceDBOptions:GetOptionsTable(self.db), 20, false)
-	AceConfig:RegisterOptionsTable(AppName, self.configOptions, "cdtg")
+	AceConfig:RegisterOptionsTable(AppName, self.configOptions, {"cdtg", AppName:lower()})
 	ACD:AddToBlizOptions(AppName)
 	if (not self.frame) then
 		self:createFrame()
