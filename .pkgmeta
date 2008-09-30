@@ -1,4 +1,4 @@
 package-as: CooldownToGo
 
 externals:
-    /libs/Ace3: http://svn.wowace.com/wowace/trunk/Ace3
+    libs/Ace3: svn://svn.wowace.com/wow/ace3/mainline/trunk
