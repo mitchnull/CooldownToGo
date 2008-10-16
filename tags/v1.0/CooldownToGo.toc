@@ -1,0 +1,20 @@
+## Interface: 30000
+## Title: CooldownToGo
+## Notes: Displays the remaing cooldown of the action you tried to use
+## Author: mitch0
+## Version: 1.0
+## SavedVariables: CooldownToGoDB
+## LoadManagers: AddonLoader
+## OptionalDeps: LibSharedMedia-3.0
+## X-Embeds: Ace3
+## X-LoadOn-Always: true
+## X-Category: Combat
+## X-License: Public Domain
+## X-RelSite-WoWI: 8601
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+localizations\localizations.xml
+
+CooldownToGo.lua
