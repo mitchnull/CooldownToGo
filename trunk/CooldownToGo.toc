@@ -1,4 +1,4 @@
-## Interface: 20400
+## Interface: 30000
 ## Title: CooldownToGo
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
@@ -10,10 +10,11 @@
 ## X-LoadOn-Always: true
 ## X-Category: Combat
 ## X-License: Public Domain
-## X-AceForum: 12422
 ## X-RelSite-WoWI: 8601
 
+#@no-lib-strip@
 embeds.xml
+#@end-no-lib-strip@
 localizations\localizations.xml
 
 CooldownToGo.lua
