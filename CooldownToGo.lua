@@ -106,7 +106,6 @@ local defaults = {
         colorR = 1.0,
         colorG = 1.0,
         colorB = 1.0,
-        colorA = 1.0,
         strata = "HIGH",
     },
 }
