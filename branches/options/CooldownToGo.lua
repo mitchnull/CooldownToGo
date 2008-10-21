@@ -6,30 +6,33 @@ Website: http://www.wowace.com/wiki/CooldownToGo
 Documentation: http://www.wowace.com/wiki/CooldownToGo
 SVN: http://svn.wowace.com/wowace/trunk/CooldownToGo/
 Description: Display the reamining cooldown on the last action you tried to use
-Dependencies:
 License: Public Domain
 ]]
 
 local AppName = "CooldownToGo"
 local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
+local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
 
 -- cache
 
 local GetTime = GetTime
-local GetSpellName = GetSpellName
-local GetSpellCooldown = GetSpellCooldown
-local GetActionText = GetActionText
-local GetActionCooldown = GetActionCooldown
-local GetActionTexture = GetActionTexture
-local GetSpellTexture = GetSpellTexture
-local GetInventoryItemCooldown = GetInventoryItemCooldown 
-local GetInventoryItemTexture = GetInventoryItemTexture 
-local GetContainerItemCooldown = GetContainerItemCooldown
-local GetContainerItemInfo = GetContainerItemInfo
+
+local GetActionInfo = GetActionInfo
+
 local GetPetActionCooldown = GetPetActionCooldown
 local GetPetActionInfo = GetPetActionInfo
+
+local GetSpellName = GetSpellName
+local GetSpellLink = GetSpellLink
+local GetSpellInfo = GetSpellInfo
+local GetSpellCooldown = GetSpellCooldown
+
+local GetInventoryItemLink = GetInventoryItemLink 
+local GetContainerItemLink = GetContainerItemLink
+local GetItemInfo = GetItemInfo
+local GetItemCooldown = GetItemCooldown
 
 -- hard-coded config stuff
 
@@ -49,9 +52,12 @@ local hideStamp -- the timestamp when we should hide the display
 local endStamp -- the timestamp when the cooldown will be over
 local finishStamp -- the timestamp when the we are finished with this cooldown
 
-local getCurrCooldown
-local currArg1
-local currArg2
+local currGetCooldown
+local currArg
+
+local pendingTexture
+local pendingGetCooldown
+local pendingArg
 
 local needUpdate = false
 local isActive = false
@@ -85,6 +91,8 @@ local defaults = {
         colorG = 1.0,
         colorB = 1.0,
         strata = "HIGH",
+        ignoredItems = {},
+        ignoredSpells = {},
     },
 }
 
@@ -92,6 +100,20 @@ local function print(text)
     if (DEFAULT_CHAT_FRAME) then 
         DEFAULT_CHAT_FRAME:AddMessage(text)
     end
+end
+
+local function printf(fmt, ...)
+    return print(fmt:format(...))
+end
+
+local function itemIdFromLink(link)
+    local id = link:match("|Hitem:(%d+):")
+    return tonumber(id)
+end
+
+local function spellIdFromLink(link)
+    local id = link:match("|Hspell:(%d+)")
+    return tonumber(id)
 end
 
 function CooldownToGo:createFrame()
@@ -127,22 +149,14 @@ function CooldownToGo:createFrame()
     self.icon = icon
 
     frame:SetScript("OnMouseDown", function(frame, button)
-        if (not button) then
-            -- some addon is hooking us but doesn't pass button. argh...
-            button = arg1
-        end
         if (button == "LeftButton") then
             self.frame:StartMoving()
             self.isMoving = true
         elseif (button == "RightButton") then
-            self:OpenConfigDialog()
+            self:openConfigDialog()
         end
     end)
     frame:SetScript("OnMouseUp", function(frame, button)
-        if (not button) then
-            -- some addon is hooking us but doesn't pass button. argh...
-            button = arg1
-        end
         if (self.isMoving and button == "LeftButton") then
             self.frame:StopMovingOrSizing()
             self.isMoving = false
@@ -228,11 +242,12 @@ end
 
 function CooldownToGo:OnEnable(first)
     self:profileChanged()
-    self:SecureHook("CastSpell", "checkSpellCooldown")
-    self:SecureHook("CastSpellByName", "checkSpellCooldownByName")
-    self:SecureHook("UseAction", "ckeckActionCooldown")
-    self:SecureHook("UseContainerItem", "ckeckContainerItemCooldown")
-    self:SecureHook("UseInventoryItem", "ckeckInventoryItemCooldown")
+    self:SecureHook("CastSpell", "checkSpellCooldownByIdx")
+    self:SecureHook("CastSpellByName", "checkSpellCooldown")
+    self:SecureHook("UseAction", "checkActionCooldown")
+    self:SecureHook("UseContainerItem", "checkContainerItemCooldown")
+    self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
+    self:SecureHook("UseItemByName", "checkItemCooldown")
     self:SecureHook("CastPetAction", "checkPetActionCooldown")
     self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "updateCooldown")
@@ -259,7 +274,7 @@ function CooldownToGo:OnUpdate(elapsed)
     end
     if (needUpdate) then
         needUpdate = false
-        local start, duration = getCurrCooldown(currArg1, currArg2)
+        local start, duration = currGetCooldown(currArg)
         if (currStart ~= start or currDuration ~= duration) then
             self:updateStamps(start, duration, false)
         end
@@ -334,13 +349,16 @@ function CooldownToGo:updateStamps(start, duration, show)
     end
 end
 
-function CooldownToGo:showCooldown(texture, getCooldownFunc, arg1, arg2)
-    local start, duration, enabled = getCooldownFunc(arg1, arg2)
+function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
+    local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if (not enabled) or (not start) or (not duration) or (duration <= GCD) then
+        if (isActive) then return end
+        pendingTexture, pendingGetCooldown, pendingArg = texture, getCooldownFunc, arg
         return
     end
-    getCurrCooldown, currArg1, currArg2 = getCooldownFunc, arg1, arg2
+    pendingTexture, pendingGetCooldown, pendingArg = nil
+    currGetCooldown, currArg = getCooldownFunc, arg
     isActive = true
     isReady = false
     isAlmostReady = false
@@ -348,34 +366,49 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg1, arg2)
     self:updateStamps(start, duration, true)
 end
 
-function CooldownToGo:checkSpellCooldown(spellIdx, bookType)
---  print("### spellIdx: " .. tostring(spellIdx))
-    local texture = GetSpellTexture(spellIdx, bookType)
-    self:showCooldown(texture, GetSpellCooldown, spellIdx, bookType)
+function CooldownToGo:checkActionCooldown(slot)
+    local type, id, subtype = GetActionInfo(slot)
+    -- printf("### action: %s, type=%s, id=%s, subtype=%s", tostring(slot), tostring(type), tostring(id), tostring(subtype))
+    if (type == 'spell') then
+        self:checkSpellCooldownByIdx(id, subtype)
+    elseif (type == 'item') then
+        self:checkItemCooldown(id)
+    end
 end
 
-function CooldownToGo:checkSpellCooldownByName(spellName)
---  print("### spellName: " .. tostring(spellName))
-    local texture = GetSpellTexture(spellName)
-    self:showCooldown(texture, GetSpellCooldown, spellName, nil)
+function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
+    -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
+    local spell = GetSpellName(spellIdx, bookType)
+    self:checkSpellCooldown(spell)
 end
 
-function CooldownToGo:ckeckActionCooldown(slot)
---  print("### action: " .. tostring(slot))
-    local texture = GetActionTexture(slot)
-    self:showCooldown(texture, GetActionCooldown, slot, nil)
+function CooldownToGo:checkSpellCooldown(spell)
+    -- print("### spell: " .. tostring(spell))
+    local spellLink = GetSpellLink(spell, "")
+    local spellId = spellIdFromLink(spellLink)
+    if (db.ignoredSpells[spellId]) then return end
+    local name, _, texture = GetSpellInfo(spellId)
+    self:showCooldown(texture, GetSpellCooldown, name, nil)
 end
 
-function CooldownToGo:ckeckInventoryItemCooldown(item)
---  print("### invItem: " .. tostring(item))
-    local texture = GetInventoryItemTexture("player", item)
-    self:showCooldown(texture, GetInventoryItemCooldown, "player", item)
+function CooldownToGo:checkInventoryItemCooldown(invSlot)
+    -- print("### invItem: " .. tostring(invSlot))
+    local itemLink = GetInventoryItemLink("player", invSlot)
+    self:checkItemCooldown(itemLink)
 end
 
-function CooldownToGo:ckeckContainerItemCooldown(bagId, bagSlot)
---  print("### containerItem: " .. tostring(bagId), .. ", " .. tostring(bagSlot))
-    local texture = GetContainerItemInfo(bagId, bagSlot)
-    self:showCooldown(texture, GetContainerItemCooldown, bagId, bagSlot)
+function CooldownToGo:checkContainerItemCooldown(bagId, bagSlot)
+    -- print("### containerItem: " .. tostring(bagId) .. ", " .. tostring(bagSlot))
+    local itemLink = GetContainerItemLink(bagId, bagSlot)
+    self:checkItemCooldown(itemLink)
+end
+
+function CooldownToGo:checkItemCooldown(item)
+    -- print("### item: " .. tostring(item))
+    local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
+    local itemId = itemIdFromLink(itemLink)
+    if (db.ignoredItems[itemId]) then return end;
+    self:showCooldown(texture, GetItemCooldown, itemId, nil)
 end
 
 function CooldownToGo:checkPetActionCooldown(index)
@@ -383,8 +416,45 @@ function CooldownToGo:checkPetActionCooldown(index)
     self:showCooldown(texture, GetPetActionCooldown, index, nil)
 end
 
+function CooldownToGo:checkPending()
+    local start, duration, enabled = pendingGetCooldown(pendingArg)
+    if (enabled and start and duration and duration > GCD) then
+        currGetCooldown, currArg = pendingGetCooldown, pendingArg
+        self.icon:SetTexture(pendingTexture)
+        isActive = true
+        isReady = false
+        isAlmostReady = false
+        currStart = start
+        currDuration = duration
+        local now = GetTime()
+        endStamp = start + duration
+        if (endStamp < now) then
+            endStamp = now
+        end
+        fadeStamp = endStamp
+        finishStamp = endStamp + db.fadeTime
+        hideStamp = fadeStamp + db.fadeTime
+
+        lastUpdate = UpdateDelay -- to force update in next frame
+        isAlmostReady = false
+        if (not isHidden) then
+            isHidden = true
+            self.frame:SetAlpha(0)
+        end
+        self.frame:Show()
+    end
+    pendingTexture, pendingGetCooldown, pendingArg = nil
+end
+
 function CooldownToGo:updateCooldown(event)
-    if (not isActive or isReady) then
+    -- printf("### updateCooldown: %s", tostring(event))
+    if (not isActive) then
+        if (pendingTexture) then
+            self:checkPending()
+        end
+        return
+    end
+    if (isReady) then
         return
     end
     needUpdate = true
