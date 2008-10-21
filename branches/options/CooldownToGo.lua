@@ -13,10 +13,6 @@ License: Public Domain
 local AppName = "CooldownToGo"
 local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
-local AceConfig = LibStub("AceConfig-3.0")
-local ACD = LibStub("AceConfigDialog-3.0")
-local AceDBOptions = LibStub("AceDBOptions-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
 
 -- cache
@@ -68,30 +64,12 @@ local GCD = 1.5
 CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
 CooldownToGo:SetDefaultModuleState(false)
 
-local Fonts = SML and SML:List("font") or { [1] = DefaultFontName }
-
-local function getFonts()
-    local res = {}
-    for i, v in ipairs(Fonts) do
-        res[v] = v
-    end
-    return res
-end
-
-local FontOutlines = {
-    [""] = L["None"],
-    ["OUTLINE"] = L["Normal"],
-    ["THICKOUTLINE"] = L["Thick"],
-}
-
-local FrameStratas = {
-    ["HIGH"] = L["High"],
-    ["MEDIUM"] = L["Medium"],
-    ["LOW"] = L["Low"],
-}
+CooldownToGo.AppName = AppName
+CooldownToGo.version = VERSION
 
 local defaults = {
     profile = {
+        minimap = {},
         holdTime = 1.0,
         fadeTime = 2.0,
         readyTime = 0.5,
@@ -113,106 +91,6 @@ local defaults = {
 local function print(text)
     if (DEFAULT_CHAT_FRAME) then 
         DEFAULT_CHAT_FRAME:AddMessage(text)
-    end
-end
-
-local options = {
-    type = "group",
-    name = AppName,
-    handler = CooldownToGo,
-    get = function(info) return db[info[#info]] end,
-    set = "setOption",
-    args = {
-        locked = {
-            type = 'toggle',
-            name = L["Locked"],
-            desc = L["Lock/Unlock display frame"],
-            order = 110,
-        },
-        holdTime = {
-            type = 'range',
-            name = L["Hold time"],
-            desc = L["Time to hold the message in seconds"],
-            min = 0.0,
-            max = 5.0,
-            step = 0.5,
-            order = 120,
-        },
-        fadeTime = {
-            type = 'range',
-            name = L["Fade time"],
-            desc = L["Fade time of the message in seconds"],
-            min = 0.0,
-            max = 5.0,
-            step = 0.5,
-            order = 125,
-        },
-        readyTime = {
-            type = 'range',
-            name = L["Ready time"],
-            desc = L["Show the cooldown again this many seconds before the cooldown expires"],
-            min = 0.0,
-            max = 1.0,
-            step = 0.1,
-            order = 130,
-        },
-        font = {
-            type = 'select',
-            name = L["Font"],
-            desc = L["Font"],
-            values = getFonts,
-            order = 135
-        },
-        fontSize = {
-            type = 'range',
-            name = L["Font size"],
-            desc = L["Font size"],
-            min = MinFontSize,
-            max = MaxFontSize,
-            step = 1,
-            order = 140,
-        },
-        fontOutline = {
-            type = 'select',
-            name = L["Font outline"],
-            desc = L["Font outline"],
-            values = FontOutlines,
-            order = 150,
-        },
-        color = {
-            type = 'color',
-            name = L["Color"],
-            desc = L["Color"],
-            set = "setColor",
-            get = function() return db.colorR, db.colorG, db.colorB end,
-            order = 115,
-        },
-        strata = {
-            type = 'select',
-            name = L["Strata"],
-            desc = L["Frame strata"],
-            values = FrameStratas,
-            order = 170,
-        },
-        config = {
-            type = 'execute',
-            name = L["Configure"],
-            desc = L["Bring up GUI configure dialog"],
-            guiHidden = true,
-            order = 300,
-            func = function() CooldownToGo:OpenConfigDialog() end,
-        },
-    },
-}
-
-
-function CooldownToGo:OpenConfigDialog()
-    local f = ACD.OpenFrames[AppName]
-    ACD:Open(AppName)
-    if not f then
-        f = ACD.OpenFrames[AppName]
-        f:SetWidth(400)
-        f:SetHeight(600)
     end
 end
 
@@ -279,18 +157,6 @@ function CooldownToGo:createFrame()
     end)
 end
 
-function CooldownToGo:setOption(info, value)
-    db[info[#info]] = value
-    self:applySettings()
-end
-
-function CooldownToGo:setColor(info, r, g, b)
-    db.colorR, db.colorG, db.colorB = r, g, b
-    if (self:IsEnabled()) then
-        self.text:SetTextColor(db.colorR, db.colorG, db.colorB)
-    end
-end
-
 function CooldownToGo:applyFontSettings(isCallback)
     local dbFontPath
     if (SML) then
@@ -348,35 +214,20 @@ function CooldownToGo:unlock()
     isHidden = false
 end
 
-function CooldownToGo:addConfigTab(key, group, order, isCmdInline)
-    if (not self.configOptions) then
-        self.configOptions = {
-            type = "group",
-            name = AppName,
-            childGroups = "tab",
-            args = {},
-        }
-    end
-    self.configOptions.args[key] = group
-    self.configOptions.args[key].order = order
-    self.configOptions.args[key].cmdInline = isCmdInline
-end
-
 function CooldownToGo:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
-    self.db.RegisterCallback(self, "OnProfileChanged")
+    self.db.RegisterCallback(self, "OnProfileChanged", "profileChanged")
+    self.db.RegisterCallback(self, "OnProfileCopied", "profileChanged")
+    self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")
     db = self.db.profile
-    self:addConfigTab('main', options, 10, true)
-    self:addConfigTab('profiles', AceDBOptions:GetOptionsTable(self.db), 20, false)
-    AceConfig:RegisterOptionsTable(AppName, self.configOptions, {"cdtg", AppName:lower()})
-    ACD:AddToBlizOptions(AppName)
+    self:setupOptions()
     if (not self.frame) then
         self:createFrame()
     end
 end
 
 function CooldownToGo:OnEnable(first)
-    self:OnProfileChanged()
+    self:profileChanged()
     self:SecureHook("CastSpell", "checkSpellCooldown")
     self:SecureHook("CastSpellByName", "checkSpellCooldownByName")
     self:SecureHook("UseAction", "ckeckActionCooldown")
@@ -397,7 +248,7 @@ function CooldownToGo:OnDisable()
     self:UnregisterAllEvents()
 end
 
-function CooldownToGo:OnProfileChanged()
+function CooldownToGo:profileChanged()
     db = self.db.profile
     self:applySettings()
 end
