@@ -1,7 +1,7 @@
 local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
+local L = LibStub("AceLocale-3.0"):GetLocale(CooldownToGo.AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0", true)
@@ -58,10 +58,10 @@ local options = {
                 ignore = {
                     type = 'execute',
                     name = L["Ignore last cooldown"],
-                    disabled = "hasLastCooldown",
+                    disabled = "isIgnoreDisabled",
                     width = 'full',
-                    order = 110,
-                    func = function() CooldownToGo:OpenConfigDialog() end,
+                    order = 113,
+                    func = function() CooldownToGo:ignoreLastCooldown() end,
                 },
                 holdTime = {
                     type = 'range',
@@ -118,7 +118,7 @@ local options = {
                     name = L["Color"],
                     desc = L["Color"],
                     set = "setColor",
-                    get = function() return db.colorR, db.colorG, db.colorB end,
+                    get = "getColor",
                     order = 115,
                 },
                 strata = {
@@ -134,14 +134,14 @@ local options = {
                     desc = L["Bring up GUI configure dialog"],
                     guiHidden = true,
                     order = 300,
-                    func = function() CooldownToGo:OpenConfigDialog() end,
+                    func = function() CooldownToGo:openConfigDialog() end,
                 },
             },
         },
     },
 }
 
-function RangeDisplay:registerSubOptions(name, opts)
+function CooldownToGo:registerSubOptions(name, opts)
     local appName = self.AppName .. "." .. name
     AceConfig:RegisterOptionsTable(appName, opts)
     return ACD:AddToBlizOptions(appName, opts.name or name, self.AppName)
@@ -210,13 +210,13 @@ function CooldownToGo:toggleLocked(flag)
     end
 end
 
-function CooldownToGo:OpenConfigDialog()
+function CooldownToGo:openConfigDialog()
     InterfaceOptionsFrame_OpenToCategory(self.profiles)
     InterfaceOptionsFrame_OpenToCategory(self.opts)
 end
 
-function CooldownToGo:hasLastCooldown()
-    return true -- TODO
+function CooldownToGo:isIgnoreDisabled()
+    return false -- TODO
 end
 
 function CooldownToGo:ignoreLastCooldown()
