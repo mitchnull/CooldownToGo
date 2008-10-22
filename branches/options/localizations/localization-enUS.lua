@@ -30,6 +30,7 @@ L["|cffeda55fLeft Click|r to lock/unlock frame"] = true
 L["|cffeda55fShift + Left Click|r to ignore last cooldown"] = true
 L["|cffeda55fRight Click|r to open the configuration window"] = true
 L["Hide minimap icon"] = true
+L["Ignore list"] = true
 L["Ignore next action"] = true
 L["Remove"] = true
 L["%s: added %s to ignore list"] = true

@@ -8,8 +8,17 @@ local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0", true)
 
 local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
+local MinFontSize = 5
+local MaxFontSize = 40
+local DefaultFontName = "Friz Quadrata TT"
 
 local _
+
+local function print(text)
+    if (DEFAULT_CHAT_FRAME) then 
+        DEFAULT_CHAT_FRAME:AddMessage(text)
+    end
+end
 
 local function getFonts()
     local fonts = SML and SML:List("font") or { [1] = DefaultFontName }
@@ -182,7 +191,7 @@ function CooldownToGo:setupOptions()
     self:setupLDB()
     AceConfig:RegisterOptionsTable(self.AppName, options.args.main)
     self.opts = ACD:AddToBlizOptions(self.AppName, self.AppName)
-    self:updateIgnoreListConfig()
+    self:updateIgnoreListOptions()
     self.ignoreListOpts = self:registerSubOptions('ignoreLists', options.args.ignoreLists)
     local profiles = AceDBOptions:GetOptionsTable(self.db)
     profiles.order = 900
@@ -270,14 +279,15 @@ function CooldownToGo:setColor(info, r, g, b)
 end
 
 function CooldownToGo:notifyOptionsChange()
+	print("### notifyOptionsChange")
     ACR:NotifyChange(self.AppName)
 end
 
 local function updateOpts(opts, db, descFunc)
     local changed
-    for id, _ in pairs(from) do
+    for id, _ in pairs(opts) do
         if (not db[id]) then
-            from[id] = nil
+            opts[id] = nil
             changed = true
         end
     end
@@ -292,11 +302,14 @@ local function updateOpts(opts, db, descFunc)
                         desc = {
                             type = 'description',
                             name = description,
+							order = 10,
                         },
                         ignore = {
                             type = 'execute',
                             name = L["Remove"],
                             func = "removeIgnored",
+							order = 20,
+							width = 'half',
                         },
                     },
                 }
@@ -323,9 +336,10 @@ end
 
 function CooldownToGo:updateIgnoreListOptions()
     local changed
-    changed = updateOpts(options.ignoreLists.spell, self.db.profile.ignoreLists.spell, getSpellDesc) or changed
-    changed = updateOpts(options.ignoreLists.item, self.db.profile.ignoreLists.item, getItemDesc)
-    changed = updateOpts(options.ignoreLists.petbar, self.db.profile.ignoreLists.petbar, getPetbarDesc)
+	print("### updateIgnoreListOptions")
+    changed = updateOpts(options.args.ignoreLists.args.spell.args, self.db.profile.ignoreLists.spell, getSpellDesc) or changed
+    changed = updateOpts(options.args.ignoreLists.args.item.args, self.db.profile.ignoreLists.item, getItemDesc)
+    changed = updateOpts(options.args.ignoreLists.args.petbar.args, self.db.profile.ignoreLists.petbar, getPetbarDesc)
     if (changed) then
         self:notifyOptionsChange() 
     end
@@ -340,7 +354,7 @@ function CooldownToGo:removeIgnored(info)
     local id = info[#info - 1]
     local cat = info[#info - 2]
     if (self.db.profile.ignoreLists[cat][id]) then
-        local text = options.ignoreLists[cat][id].description
+        local text = options.args.ignoreLists.args[cat].args[id].args.desc.name
         self.db.profile.ignoreLists[cat][id] = nil
         self:notifyIgnoredChange(text, nil)
     end

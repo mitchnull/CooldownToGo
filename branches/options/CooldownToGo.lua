@@ -37,10 +37,11 @@ local GetItemCooldown = GetItemCooldown
 -- hard-coded config stuff
 
 local UpdateDelay = .1 -- update frequency == 1/UpdateDelay
-local MinFontSize = 5
-local MaxFontSize = 40
-local DefaultFontName = "Friz Quadrata TT"
+local Width = 120
+local Height = 30
 local DefaultFontPath = GameFontNormal:GetFont()
+local DefaultFontName = "Friz Quadrata TT"
+local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
 
 -- internal vars
 
@@ -110,12 +111,12 @@ local function printf(fmt, ...)
 end
 
 local function itemIdFromLink(link)
-    local id = link:match("|Hitem:(%d+):")
+    local id = link:match("item:(%d+)")
     return tonumber(id)
 end
 
 local function spellIdFromLink(link)
-    local id = link:match("|Hspell:(%d+)")
+    local id = link:match("spell:(%d+)")
     return tonumber(id)
 end
 
@@ -132,8 +133,8 @@ function CooldownToGo:createFrame()
     frame:EnableMouse(false)
     frame:SetClampedToScreen()
     frame:SetMovable(true)
-    frame:SetWidth(120)
-    frame:SetHeight(30)
+    frame:SetWidth(Width)
+    frame:SetHeight(Height)
     frame:SetPoint(defaults.profile.point, UIParent, defaults.profile.relPoint, defaults.profile.x, defaults.profile.y)
     frame:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
     frame:SetJustifyH("CENTER")
@@ -150,9 +151,11 @@ function CooldownToGo:createFrame()
     text:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
     text:SetJustifyH("LEFT")
     text:SetPoint("LEFT", frame, "CENTER", 0, 0)
+	text:SetText("CDTG")
     self.text = text
 
     local icon = frame:CreateTexture("CDTGIcon", "OVERLAY")
+	icon:SetTexture(Icon)
     icon:SetPoint("RIGHT", frame, "CENTER", -2, 0)
     self.icon = icon
 
@@ -200,8 +203,8 @@ function CooldownToGo:applyFontSettings(isCallback)
     if (dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline) then
         self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
     end
-    self.icon:SetHeight(fontSize)
-    self.icon:SetWidth(fontSize)
+    self.icon:SetHeight(db.fontSize)
+    self.icon:SetWidth(db.fontSize)
 end
 
 function CooldownToGo:applySettings()
@@ -242,14 +245,14 @@ function CooldownToGo:OnInitialize()
     self.db.RegisterCallback(self, "OnProfileCopied", "profileChanged")
     self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")
     db = self.db.profile
-    self:setupOptions()
     if (not self.frame) then
         self:createFrame()
     end
+	self:applySettings()
+    self:setupOptions()
 end
 
 function CooldownToGo:OnEnable(first)
-    self:profileChanged()
     self:SecureHook("CastSpell", "checkSpellCooldownByIdx")
     self:SecureHook("CastSpellByName", "checkSpellCooldown")
     self:SecureHook("UseAction", "checkActionCooldown")
@@ -360,7 +363,7 @@ end
 function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, cat, id)
     if (self.ignoreNext) then
         self.ignoreNext = nil
-        self:ignore(cat .. ':' .. id)
+        self:ignore(cat .. ':' .. id, true)
         return
     end
     local start, duration, enabled = getCooldownFunc(arg)
@@ -399,7 +402,7 @@ function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
     local spellLink = GetSpellLink(spell, "")
     local spellId = spellIdFromLink(spellLink)
-    if (db.ignoredSpells[spellId]) then return end
+    if (db.ignoreLists.spell[spellId]) then return end
     local name, _, texture = GetSpellInfo(spellId)
     self:showCooldown(texture, GetSpellCooldown, name, 'spell', spellId)
 end
@@ -487,12 +490,12 @@ function CooldownToGo:ignore(link, flag)
     flag = flag or nil
     if (spellIdFromLink(link)) then
         local id = spellIdFromLink(link)
-        db.ignoreLists.spells[id] = flag 
+        db.ignoreLists.spell[id] = flag 
         local link = GetSpellLink(id)
         self:notifyIgnoredChange(link, flag)
     elseif  (itemIdFromLink(link)) then
         local id = itemIdFromLink(link)
-        db.ignoredLists.items[id] = flag
+        db.ignoreLists.item[id] = flag
         local _, link = GetItemInfo(id)
         self:notifyIgnoredChange(link, flag)
     elseif (petActionIndexFromLink(link)) then
