@@ -198,7 +198,7 @@ function CooldownToGo:setupLDB()
         icon = Icon,
         OnClick = function(frame, button)
             if (button == "LeftButton") then
-                if (SHIFT_PRESEED_TODO) then
+                if (IsShiftKeyDown()) then
                     self:ignoreNextAction()
                 else
                     self:toggleLocked()
@@ -245,14 +245,6 @@ end
 function CooldownToGo:openConfigDialog()
     InterfaceOptionsFrame_OpenToCategory(self.profiles)
     InterfaceOptionsFrame_OpenToCategory(self.opts)
-end
-
-function CooldownToGo:isIgnoreDisabled()
-    return false -- TODO
-end
-
-function CooldownToGo:ignoreLastCooldown()
--- TODO
 end
 
 function CooldownToGo:getOption(info)
