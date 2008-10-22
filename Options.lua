@@ -1,5 +1,6 @@
 local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
+local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(CooldownToGo.AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
@@ -55,13 +56,12 @@ local options = {
                     desc = L["Lock/Unlock display frame"],
                     order = 100,
                 },
-                ignore = {
+                ignoreNext = {
                     type = 'execute',
-                    name = L["Ignore last cooldown"],
-                    disabled = "isIgnoreDisabled",
+                    name = L["Ignore next action"],
                     width = 'full',
-                    order = 113,
-                    func = function() CooldownToGo:ignoreLastCooldown() end,
+                    order = 10,
+                    func = "ignoreNextAction",
                 },
                 holdTime = {
                     type = 'range',
@@ -138,6 +138,37 @@ local options = {
                 },
             },
         },
+        ignoreLists = {
+            type = 'group',
+            childGroups = 'tab',
+            inline = true,
+            name = L["Ignore list"],
+            handler = CooldownToGo,
+            order = 50,
+            args = {
+                spell = {
+                    type = 'group',
+                    inline = true,
+                    cmdHidden = true,
+                    order = 20,
+                    args = {},
+                },
+                item = {
+                    type = 'group',
+                    inline = true,
+                    cmdHidden = true,
+                    order = 30,
+                    args = {},
+                },
+                petbar = {
+                    type = 'group',
+                    inline = true,
+                    cmdHidden = true,
+                    order = 30,
+                    args = {},
+                },
+            },
+        },
     },
 }
 
@@ -151,7 +182,8 @@ function CooldownToGo:setupOptions()
     self:setupLDB()
     AceConfig:RegisterOptionsTable(self.AppName, options.args.main)
     self.opts = ACD:AddToBlizOptions(self.AppName, self.AppName)
-    -- TODO add ignore lists
+    self:updateIgnoreListConfig()
+    self.ignoreListOpts = self:registerSubOptions('ignoreLists', options.args.ignoreLists)
     local profiles = AceDBOptions:GetOptionsTable(self.db)
     profiles.order = 900
     options.args.profiles = profiles
@@ -167,7 +199,7 @@ function CooldownToGo:setupLDB()
         OnClick = function(frame, button)
             if (button == "LeftButton") then
                 if (SHIFT_PRESEED_TODO) then
-                    self:ignoreLastCooldown()
+                    self:ignoreNextAction()
                 else
                     self:toggleLocked()
                 end
@@ -245,3 +277,84 @@ function CooldownToGo:setColor(info, r, g, b)
     end
 end
 
+function CooldownToGo:notifyOptionsChange()
+    ACR:NotifyChange(self.AppName)
+end
+
+local function updateOpts(opts, db, descFunc)
+    local changed
+    for id, _ in pairs(from) do
+        if (not db[id]) then
+            from[id] = nil
+            changed = true
+        end
+    end
+    for id, flag in pairs(db) do
+        if (flag) then
+            local description = descFunc(id)
+            if (description) then
+                opts[id] = {
+                    type = 'group',
+                    inline = true,
+                    args = {
+                        desc = {
+                            type = 'description',
+                            name = description,
+                        },
+                        ignore = {
+                            type = 'execute',
+                            name = L["Remove"],
+                            func = "removeIgnored",
+                        },
+                    },
+                }
+                changed = true
+            end
+        end
+    end
+    -- TODO: sort
+    return changed
+end
+
+local function getSpellDesc(id)
+    return GetSpellLink(id)
+end
+
+local function getItemDesc(id)
+    local _, link = GetItemInfo(id)
+    return link
+end
+
+local function getPetbarDesc(id)
+    return GetPetActionInfo(id)
+end
+
+function CooldownToGo:updateIgnoreListOptions()
+    local changed
+    changed = updateOpts(options.ignoreLists.spell, self.db.profile.ignoreLists.spell, getSpellDesc) or changed
+    changed = updateOpts(options.ignoreLists.item, self.db.profile.ignoreLists.item, getItemDesc)
+    changed = updateOpts(options.ignoreLists.petbar, self.db.profile.ignoreLists.petbar, getPetbarDesc)
+    if (changed) then
+        self:notifyOptionsChange() 
+    end
+end
+
+function CooldownToGo:ignoreNextAction()
+    self.ignoreNext = true
+    -- TODO give some visual feedback
+end
+
+function CooldownToGo:removeIgnored(info)
+    local id = info[#info - 1]
+    local cat = info[#info - 2]
+    if (self.db.profile.ignoreLists[cat][id]) then
+        local text = options.ignoreLists[cat][id].description
+        self.db.profile.ignoreLists[cat][id] = nil
+        self:notifyIgnoredChange(text, nil)
+    end
+end
+
+--[[
+|T<path to texture>:<size>:<offset>|t eg
+|TInterface\\AddOns\\BetterInbox\\icons\\UI-GoldIcon:12:|t
+]]--
