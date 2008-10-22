@@ -91,8 +91,11 @@ local defaults = {
         colorG = 1.0,
         colorB = 1.0,
         strata = "HIGH",
-        ignoredItems = {},
-        ignoredSpells = {},
+        ignoreLists = {
+            spell = {},
+            item = {},
+            petbar = {},
+        },
     },
 }
 
@@ -113,6 +116,11 @@ end
 
 local function spellIdFromLink(link)
     local id = link:match("|Hspell:(%d+)")
+    return tonumber(id)
+end
+
+local function petActionIndexFromLink(link)
+    local id = link:match("petbar:(%d+)")
     return tonumber(id)
 end
 
@@ -349,7 +357,12 @@ function CooldownToGo:updateStamps(start, duration, show)
     end
 end
 
-function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
+function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, cat, id)
+    if (self.ignoreNext) then
+        self.ignoreNext = nil
+        self:ignore(cat .. ':' .. id)
+        return
+    end
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if (not enabled) or (not start) or (not duration) or (duration <= GCD) then
@@ -388,7 +401,7 @@ function CooldownToGo:checkSpellCooldown(spell)
     local spellId = spellIdFromLink(spellLink)
     if (db.ignoredSpells[spellId]) then return end
     local name, _, texture = GetSpellInfo(spellId)
-    self:showCooldown(texture, GetSpellCooldown, name, nil)
+    self:showCooldown(texture, GetSpellCooldown, name, 'spell', spellId)
 end
 
 function CooldownToGo:checkInventoryItemCooldown(invSlot)
@@ -407,13 +420,13 @@ function CooldownToGo:checkItemCooldown(item)
     -- print("### item: " .. tostring(item))
     local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
     local itemId = itemIdFromLink(itemLink)
-    if (db.ignoredItems[itemId]) then return end;
-    self:showCooldown(texture, GetItemCooldown, itemId, nil)
+    if (db.ignoreLists.item[itemId]) then return end;
+    self:showCooldown(texture, GetItemCooldown, itemId, 'item', itemId)
 end
 
 function CooldownToGo:checkPetActionCooldown(index)
     local _, _, texture = GetPetActionInfo(index)
-    self:showCooldown(texture, GetPetActionCooldown, index, nil)
+    self:showCooldown(texture, GetPetActionCooldown, index, 'petbar', index)
 end
 
 function CooldownToGo:checkPending()
@@ -459,3 +472,34 @@ function CooldownToGo:updateCooldown(event)
     end
     needUpdate = true
 end
+
+function CooldownToGo:notifyIgnoredChange(text, flag)
+    if (not text) then return end
+    if (flag) then
+        printf(L["%s: added %s to ignore list"], AppName, text)
+    else
+        printf(L["%s: removed %s from ignore list"], AppName, text)
+    end
+    self:updateIgnoreListOptions()
+end
+
+function CooldownToGo:ignore(link, flag)
+    flag = flag or nil
+    if (spellIdFromLink(link)) then
+        local id = spellIdFromLink(link)
+        db.ignoreLists.spells[id] = flag 
+        local link = GetSpellLink(id)
+        self:notifyIgnoredChange(link, flag)
+    elseif  (itemIdFromLink(link)) then
+        local id = itemIdFromLink(link)
+        db.ignoredLists.items[id] = flag
+        local _, link = GetItemInfo(id)
+        self:notifyIgnoredChange(link, flag)
+    elseif (petActionIndexFromLink(link)) then
+        local id = petActionIndexFromLink(link)
+        local text = GetPetActionInfo(id)
+        db.ignoreLists.petbar[id] = flag
+        self:notifyIgnoredChange(text, flag)
+    end
+end
+
