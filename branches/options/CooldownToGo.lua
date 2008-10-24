@@ -57,10 +57,6 @@ local finishStamp -- the timestamp when the we are finished with this cooldown
 local currGetCooldown
 local currArg
 
-local pendingTexture
-local pendingGetCooldown
-local pendingArg
-
 local needUpdate = false
 local isActive = false
 local isAlmostReady = false
@@ -375,11 +371,8 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, cat, id)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if (not enabled) or (not start) or (not duration) or (duration <= GCD) then
-        if (isActive) then return end
-        pendingTexture, pendingGetCooldown, pendingArg = texture, getCooldownFunc, arg
         return
     end
-    pendingTexture, pendingGetCooldown, pendingArg = nil
     currGetCooldown, currArg = getCooldownFunc, arg
     isActive = true
     isReady = false
@@ -438,42 +431,9 @@ function CooldownToGo:checkPetActionCooldown(index)
     self:showCooldown(texture, GetPetActionCooldown, index, 'petbar', index)
 end
 
-function CooldownToGo:checkPending()
-    local start, duration, enabled = pendingGetCooldown(pendingArg)
-    if (enabled and start and duration and duration > GCD) then
-        currGetCooldown, currArg = pendingGetCooldown, pendingArg
-        self.icon:SetTexture(pendingTexture)
-        isActive = true
-        isReady = false
-        isAlmostReady = false
-        currStart = start
-        currDuration = duration
-        local now = GetTime()
-        endStamp = start + duration
-        if (endStamp < now) then
-            endStamp = now
-        end
-        fadeStamp = endStamp
-        finishStamp = endStamp + db.fadeTime
-        hideStamp = fadeStamp + db.fadeTime
-
-        lastUpdate = UpdateDelay -- to force update in next frame
-        isAlmostReady = false
-        if (not isHidden) then
-            isHidden = true
-            self.frame:SetAlpha(0)
-        end
-        self.frame:Show()
-    end
-    pendingTexture, pendingGetCooldown, pendingArg = nil
-end
-
 function CooldownToGo:updateCooldown(event)
     -- printf("### updateCooldown: %s", tostring(event))
     if (not isActive) then
-        if (pendingTexture) then
-            self:checkPending()
-        end
         return
     end
     if (isReady) then
