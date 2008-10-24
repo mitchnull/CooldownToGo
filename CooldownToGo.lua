@@ -43,6 +43,7 @@ local DefaultFontPath = GameFontNormal:GetFont()
 local DefaultFontName = "Friz Quadrata TT"
 local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
 
+local Rank1 = "Rank 1"
 -- internal vars
 
 local db
@@ -120,6 +121,11 @@ local function spellIdFromLink(link)
     return tonumber(id)
 end
 
+local function getNormalizedSpellLink(spell)
+	local link = GetSpellLink(spell, Rank1)
+	return link or GetSpellLink(spell, "")
+end
+
 local function petActionIndexFromLink(link)
     local id = link:match("petbar:(%d+)")
     return tonumber(id)
@@ -151,7 +157,7 @@ function CooldownToGo:createFrame()
     text:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
     text:SetJustifyH("LEFT")
     text:SetPoint("LEFT", frame, "CENTER", 0, 0)
-	text:SetText("CDTG")
+	text:SetText("cdtg")
     self.text = text
 
     local icon = frame:CreateTexture("CDTGIcon", "OVERLAY")
@@ -363,7 +369,7 @@ end
 function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, cat, id)
     if (self.ignoreNext) then
         self.ignoreNext = nil
-        self:ignore(cat .. ':' .. id, true)
+        self:setIgnoredState(cat .. ':' .. id, true)
         return
     end
     local start, duration, enabled = getCooldownFunc(arg)
@@ -400,7 +406,7 @@ end
 
 function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
-    local spellLink = GetSpellLink(spell, "")
+    local spellLink = getNormalizedSpellLink(spell)
     local spellId = spellIdFromLink(spellLink)
     if (db.ignoreLists.spell[spellId]) then return end
     local name, _, texture = GetSpellInfo(spellId)
@@ -479,19 +485,22 @@ end
 function CooldownToGo:notifyIgnoredChange(text, flag)
     if (not text) then return end
     if (flag) then
-        printf(L["%s: added %s to ignore list"], AppName, text)
+        self:Print(L["added %s to ignore list"]:format(text))
     else
-        printf(L["%s: removed %s from ignore list"], AppName, text)
+        self:Print(L["removed %s from ignore list"]:format(text))
     end
     self:updateIgnoreListOptions()
 end
 
-function CooldownToGo:ignore(link, flag)
-    flag = flag or nil
+function CooldownToGo:setIgnoredState(link, flag)
+	if (not flag) then flag = nil end
     if (spellIdFromLink(link)) then
         local id = spellIdFromLink(link)
+		-- "normalize" to Rank1 id
+		local spell = GetSpellInfo(id)
+		link = getNormalizedSpellLink(spell)
+		id = spellIdFromLink(link)
         db.ignoreLists.spell[id] = flag 
-        local link = GetSpellLink(id)
         self:notifyIgnoredChange(link, flag)
     elseif  (itemIdFromLink(link)) then
         local id = itemIdFromLink(link)
