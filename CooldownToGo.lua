@@ -6,43 +6,44 @@ Website: http://www.wowace.com/wiki/CooldownToGo
 Documentation: http://www.wowace.com/wiki/CooldownToGo
 SVN: http://svn.wowace.com/wowace/trunk/CooldownToGo/
 Description: Display the reamining cooldown on the last action you tried to use
-Dependencies:
 License: Public Domain
 ]]
 
 local AppName = "CooldownToGo"
 local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
-local AceConfig = LibStub("AceConfig-3.0")
-local ACD = LibStub("AceConfigDialog-3.0")
-local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
 
 -- cache
 
 local GetTime = GetTime
-local GetSpellName = GetSpellName
-local GetSpellCooldown = GetSpellCooldown
-local GetActionText = GetActionText
-local GetActionCooldown = GetActionCooldown
-local GetActionTexture = GetActionTexture
-local GetSpellTexture = GetSpellTexture
-local GetInventoryItemCooldown = GetInventoryItemCooldown 
-local GetInventoryItemTexture = GetInventoryItemTexture 
-local GetContainerItemCooldown = GetContainerItemCooldown
-local GetContainerItemInfo = GetContainerItemInfo
+
+local GetActionInfo = GetActionInfo
+
 local GetPetActionCooldown = GetPetActionCooldown
 local GetPetActionInfo = GetPetActionInfo
+
+local GetSpellName = GetSpellName
+local GetSpellLink = GetSpellLink
+local GetSpellInfo = GetSpellInfo
+local GetSpellCooldown = GetSpellCooldown
+
+local GetInventoryItemLink = GetInventoryItemLink 
+local GetContainerItemLink = GetContainerItemLink
+local GetItemInfo = GetItemInfo
+local GetItemCooldown = GetItemCooldown
 
 -- hard-coded config stuff
 
 local UpdateDelay = .1 -- update frequency == 1/UpdateDelay
-local MinFontSize = 5
-local MaxFontSize = 40
-local DefaultFontName = "Friz Quadrata TT"
+local Width = 120
+local Height = 30
 local DefaultFontPath = GameFontNormal:GetFont()
+local DefaultFontName = "Friz Quadrata TT"
+local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
 
+local Rank1 = "Rank 1"
 -- internal vars
 
 local db
@@ -53,9 +54,8 @@ local hideStamp -- the timestamp when we should hide the display
 local endStamp -- the timestamp when the cooldown will be over
 local finishStamp -- the timestamp when the we are finished with this cooldown
 
-local getCurrCooldown
-local currArg1
-local currArg2
+local currGetCooldown
+local currArg
 
 local needUpdate = false
 local isActive = false
@@ -68,30 +68,12 @@ local GCD = 1.5
 CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
 CooldownToGo:SetDefaultModuleState(false)
 
-local Fonts = SML and SML:List("font") or { [1] = DefaultFontName }
-
-local function getFonts()
-    local res = {}
-    for i, v in ipairs(Fonts) do
-        res[v] = v
-    end
-    return res
-end
-
-local FontOutlines = {
-    [""] = L["None"],
-    ["OUTLINE"] = L["Normal"],
-    ["THICKOUTLINE"] = L["Thick"],
-}
-
-local FrameStratas = {
-    ["HIGH"] = L["High"],
-    ["MEDIUM"] = L["Medium"],
-    ["LOW"] = L["Low"],
-}
+CooldownToGo.AppName = AppName
+CooldownToGo.version = VERSION
 
 local defaults = {
     profile = {
+        minimap = {},
         holdTime = 1.0,
         fadeTime = 2.0,
         readyTime = 0.5,
@@ -107,6 +89,11 @@ local defaults = {
         colorG = 1.0,
         colorB = 1.0,
         strata = "HIGH",
+        ignoreLists = {
+            spell = {},
+            item = {},
+            petbar = {},
+        },
     },
 }
 
@@ -116,104 +103,28 @@ local function print(text)
     end
 end
 
-local options = {
-    type = "group",
-    name = AppName,
-    handler = CooldownToGo,
-    get = function(info) return db[info[#info]] end,
-    set = "setOption",
-    args = {
-        locked = {
-            type = 'toggle',
-            name = L["Locked"],
-            desc = L["Lock/Unlock display frame"],
-            order = 110,
-        },
-        holdTime = {
-            type = 'range',
-            name = L["Hold time"],
-            desc = L["Time to hold the message in seconds"],
-            min = 0.0,
-            max = 5.0,
-            step = 0.5,
-            order = 120,
-        },
-        fadeTime = {
-            type = 'range',
-            name = L["Fade time"],
-            desc = L["Fade time of the message in seconds"],
-            min = 0.0,
-            max = 5.0,
-            step = 0.5,
-            order = 125,
-        },
-        readyTime = {
-            type = 'range',
-            name = L["Ready time"],
-            desc = L["Show the cooldown again this many seconds before the cooldown expires"],
-            min = 0.0,
-            max = 1.0,
-            step = 0.1,
-            order = 130,
-        },
-        font = {
-            type = 'select',
-            name = L["Font"],
-            desc = L["Font"],
-            values = getFonts,
-            order = 135
-        },
-        fontSize = {
-            type = 'range',
-            name = L["Font size"],
-            desc = L["Font size"],
-            min = MinFontSize,
-            max = MaxFontSize,
-            step = 1,
-            order = 140,
-        },
-        fontOutline = {
-            type = 'select',
-            name = L["Font outline"],
-            desc = L["Font outline"],
-            values = FontOutlines,
-            order = 150,
-        },
-        color = {
-            type = 'color',
-            name = L["Color"],
-            desc = L["Color"],
-            set = "setColor",
-            get = function() return db.colorR, db.colorG, db.colorB end,
-            order = 115,
-        },
-        strata = {
-            type = 'select',
-            name = L["Strata"],
-            desc = L["Frame strata"],
-            values = FrameStratas,
-            order = 170,
-        },
-        config = {
-            type = 'execute',
-            name = L["Configure"],
-            desc = L["Bring up GUI configure dialog"],
-            guiHidden = true,
-            order = 300,
-            func = function() CooldownToGo:OpenConfigDialog() end,
-        },
-    },
-}
+local function printf(fmt, ...)
+    return print(fmt:format(...))
+end
 
+local function itemIdFromLink(link)
+    local id = link:match("item:(%d+)")
+    return tonumber(id)
+end
 
-function CooldownToGo:OpenConfigDialog()
-    local f = ACD.OpenFrames[AppName]
-    ACD:Open(AppName)
-    if not f then
-        f = ACD.OpenFrames[AppName]
-        f:SetWidth(400)
-        f:SetHeight(600)
-    end
+local function spellIdFromLink(link)
+    local id = link:match("spell:(%d+)")
+    return tonumber(id)
+end
+
+local function getNormalizedSpellLink(spell)
+	local link = GetSpellLink(spell, Rank1)
+	return link or GetSpellLink(spell, "")
+end
+
+local function petActionIndexFromLink(link)
+    local id = link:match("petbar:(%d+)")
+    return tonumber(id)
 end
 
 function CooldownToGo:createFrame()
@@ -224,8 +135,8 @@ function CooldownToGo:createFrame()
     frame:EnableMouse(false)
     frame:SetClampedToScreen()
     frame:SetMovable(true)
-    frame:SetWidth(120)
-    frame:SetHeight(30)
+    frame:SetWidth(Width)
+    frame:SetHeight(Height)
     frame:SetPoint(defaults.profile.point, UIParent, defaults.profile.relPoint, defaults.profile.x, defaults.profile.y)
     frame:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
     frame:SetJustifyH("CENTER")
@@ -242,29 +153,23 @@ function CooldownToGo:createFrame()
     text:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
     text:SetJustifyH("LEFT")
     text:SetPoint("LEFT", frame, "CENTER", 0, 0)
+	text:SetText("cdtg")
     self.text = text
 
     local icon = frame:CreateTexture("CDTGIcon", "OVERLAY")
+	icon:SetTexture(Icon)
     icon:SetPoint("RIGHT", frame, "CENTER", -2, 0)
     self.icon = icon
 
     frame:SetScript("OnMouseDown", function(frame, button)
-        if (not button) then
-            -- some addon is hooking us but doesn't pass button. argh...
-            button = arg1
-        end
         if (button == "LeftButton") then
             self.frame:StartMoving()
             self.isMoving = true
         elseif (button == "RightButton") then
-            self:OpenConfigDialog()
+            self:openConfigDialog()
         end
     end)
     frame:SetScript("OnMouseUp", function(frame, button)
-        if (not button) then
-            -- some addon is hooking us but doesn't pass button. argh...
-            button = arg1
-        end
         if (self.isMoving and button == "LeftButton") then
             self.frame:StopMovingOrSizing()
             self.isMoving = false
@@ -277,18 +182,6 @@ function CooldownToGo:createFrame()
         lastUpdate = 0
         self:OnUpdate(elapsed)
     end)
-end
-
-function CooldownToGo:setOption(info, value)
-    db[info[#info]] = value
-    self:applySettings()
-end
-
-function CooldownToGo:setColor(info, r, g, b)
-    db.colorR, db.colorG, db.colorB = r, g, b
-    if (self:IsEnabled()) then
-        self.text:SetTextColor(db.colorR, db.colorG, db.colorB)
-    end
 end
 
 function CooldownToGo:applyFontSettings(isCallback)
@@ -312,8 +205,8 @@ function CooldownToGo:applyFontSettings(isCallback)
     if (dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline) then
         self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
     end
-    self.icon:SetHeight(fontSize)
-    self.icon:SetWidth(fontSize)
+    self.icon:SetHeight(db.fontSize)
+    self.icon:SetWidth(db.fontSize)
 end
 
 function CooldownToGo:applySettings()
@@ -348,40 +241,26 @@ function CooldownToGo:unlock()
     isHidden = false
 end
 
-function CooldownToGo:addConfigTab(key, group, order, isCmdInline)
-    if (not self.configOptions) then
-        self.configOptions = {
-            type = "group",
-            name = AppName,
-            childGroups = "tab",
-            args = {},
-        }
-    end
-    self.configOptions.args[key] = group
-    self.configOptions.args[key].order = order
-    self.configOptions.args[key].cmdInline = isCmdInline
-end
-
 function CooldownToGo:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
-    self.db.RegisterCallback(self, "OnProfileChanged")
+    self.db.RegisterCallback(self, "OnProfileChanged", "profileChanged")
+    self.db.RegisterCallback(self, "OnProfileCopied", "profileChanged")
+    self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")
     db = self.db.profile
-    self:addConfigTab('main', options, 10, true)
-    self:addConfigTab('profiles', AceDBOptions:GetOptionsTable(self.db), 20, false)
-    AceConfig:RegisterOptionsTable(AppName, self.configOptions, {"cdtg", AppName:lower()})
-    ACD:AddToBlizOptions(AppName)
     if (not self.frame) then
         self:createFrame()
     end
+	self:applySettings()
+    self:setupOptions()
 end
 
 function CooldownToGo:OnEnable(first)
-    self:OnProfileChanged()
-    self:SecureHook("CastSpell", "checkSpellCooldown")
-    self:SecureHook("CastSpellByName", "checkSpellCooldownByName")
-    self:SecureHook("UseAction", "ckeckActionCooldown")
-    self:SecureHook("UseContainerItem", "ckeckContainerItemCooldown")
-    self:SecureHook("UseInventoryItem", "ckeckInventoryItemCooldown")
+    self:SecureHook("CastSpell", "checkSpellCooldownByIdx")
+    self:SecureHook("CastSpellByName", "checkSpellCooldown")
+    self:SecureHook("UseAction", "checkActionCooldown")
+    self:SecureHook("UseContainerItem", "checkContainerItemCooldown")
+    self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
+    self:SecureHook("UseItemByName", "checkItemCooldown")
     self:SecureHook("CastPetAction", "checkPetActionCooldown")
     self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "updateCooldown")
@@ -397,7 +276,7 @@ function CooldownToGo:OnDisable()
     self:UnregisterAllEvents()
 end
 
-function CooldownToGo:OnProfileChanged()
+function CooldownToGo:profileChanged()
     db = self.db.profile
     self:applySettings()
 end
@@ -408,7 +287,7 @@ function CooldownToGo:OnUpdate(elapsed)
     end
     if (needUpdate) then
         needUpdate = false
-        local start, duration = getCurrCooldown(currArg1, currArg2)
+        local start, duration = currGetCooldown(currArg)
         if (currStart ~= start or currDuration ~= duration) then
             self:updateStamps(start, duration, false)
         end
@@ -483,13 +362,18 @@ function CooldownToGo:updateStamps(start, duration, show)
     end
 end
 
-function CooldownToGo:showCooldown(texture, getCooldownFunc, arg1, arg2)
-    local start, duration, enabled = getCooldownFunc(arg1, arg2)
+function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, cat, id)
+    if (self.ignoreNext) then
+        self.ignoreNext = nil
+        self:setIgnoredState(cat .. ':' .. id, true)
+        return
+    end
+    local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if (not enabled) or (not start) or (not duration) or (duration <= GCD) then
         return
     end
-    getCurrCooldown, currArg1, currArg2 = getCooldownFunc, arg1, arg2
+    currGetCooldown, currArg = getCooldownFunc, arg
     isActive = true
     isReady = false
     isAlmostReady = false
@@ -497,44 +381,97 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg1, arg2)
     self:updateStamps(start, duration, true)
 end
 
-function CooldownToGo:checkSpellCooldown(spellIdx, bookType)
---  print("### spellIdx: " .. tostring(spellIdx))
-    local texture = GetSpellTexture(spellIdx, bookType)
-    self:showCooldown(texture, GetSpellCooldown, spellIdx, bookType)
+function CooldownToGo:checkActionCooldown(slot)
+    local type, id, subtype = GetActionInfo(slot)
+    -- printf("### action: %s, type=%s, id=%s, subtype=%s", tostring(slot), tostring(type), tostring(id), tostring(subtype))
+    if (type == 'spell') then
+        self:checkSpellCooldownByIdx(id, subtype)
+    elseif (type == 'item') then
+        self:checkItemCooldown(id)
+    end
 end
 
-function CooldownToGo:checkSpellCooldownByName(spellName)
---  print("### spellName: " .. tostring(spellName))
-    local texture = GetSpellTexture(spellName)
-    self:showCooldown(texture, GetSpellCooldown, spellName, nil)
+function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
+    -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
+    local spell = GetSpellName(spellIdx, bookType)
+    self:checkSpellCooldown(spell)
 end
 
-function CooldownToGo:ckeckActionCooldown(slot)
---  print("### action: " .. tostring(slot))
-    local texture = GetActionTexture(slot)
-    self:showCooldown(texture, GetActionCooldown, slot, nil)
+function CooldownToGo:checkSpellCooldown(spell)
+    -- print("### spell: " .. tostring(spell))
+    local spellLink = getNormalizedSpellLink(spell)
+    local spellId = spellIdFromLink(spellLink)
+    if (db.ignoreLists.spell[spellId]) then return end
+    local name, _, texture = GetSpellInfo(spellId)
+    self:showCooldown(texture, GetSpellCooldown, name, 'spell', spellId)
 end
 
-function CooldownToGo:ckeckInventoryItemCooldown(item)
---  print("### invItem: " .. tostring(item))
-    local texture = GetInventoryItemTexture("player", item)
-    self:showCooldown(texture, GetInventoryItemCooldown, "player", item)
+function CooldownToGo:checkInventoryItemCooldown(invSlot)
+    -- print("### invItem: " .. tostring(invSlot))
+    local itemLink = GetInventoryItemLink("player", invSlot)
+    self:checkItemCooldown(itemLink)
 end
 
-function CooldownToGo:ckeckContainerItemCooldown(bagId, bagSlot)
---  print("### containerItem: " .. tostring(bagId), .. ", " .. tostring(bagSlot))
-    local texture = GetContainerItemInfo(bagId, bagSlot)
-    self:showCooldown(texture, GetContainerItemCooldown, bagId, bagSlot)
+function CooldownToGo:checkContainerItemCooldown(bagId, bagSlot)
+    -- print("### containerItem: " .. tostring(bagId) .. ", " .. tostring(bagSlot))
+    local itemLink = GetContainerItemLink(bagId, bagSlot)
+    self:checkItemCooldown(itemLink)
+end
+
+function CooldownToGo:checkItemCooldown(item)
+    -- print("### item: " .. tostring(item))
+    local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
+    local itemId = itemIdFromLink(itemLink)
+    if (db.ignoreLists.item[itemId]) then return end;
+    self:showCooldown(texture, GetItemCooldown, itemId, 'item', itemId)
 end
 
 function CooldownToGo:checkPetActionCooldown(index)
     local _, _, texture = GetPetActionInfo(index)
-    self:showCooldown(texture, GetPetActionCooldown, index, nil)
+    self:showCooldown(texture, GetPetActionCooldown, index, 'petbar', index)
 end
 
 function CooldownToGo:updateCooldown(event)
-    if (not isActive or isReady) then
+    -- printf("### updateCooldown: %s", tostring(event))
+    if (not isActive) then
+        return
+    end
+    if (isReady) then
         return
     end
     needUpdate = true
 end
+
+function CooldownToGo:notifyIgnoredChange(text, flag)
+    if (not text) then return end
+    if (flag) then
+        self:Print(L["added %s to ignore list"]:format(text))
+    else
+        self:Print(L["removed %s from ignore list"]:format(text))
+    end
+    self:updateIgnoreListOptions()
+end
+
+function CooldownToGo:setIgnoredState(link, flag)
+	if (not flag) then flag = nil end
+    if (spellIdFromLink(link)) then
+        local id = spellIdFromLink(link)
+		-- "normalize" to Rank1 id
+		local spell = GetSpellInfo(id)
+		link = getNormalizedSpellLink(spell)
+		id = spellIdFromLink(link)
+        db.ignoreLists.spell[id] = flag 
+        self:notifyIgnoredChange(link, flag)
+    elseif  (itemIdFromLink(link)) then
+        local id = itemIdFromLink(link)
+        db.ignoreLists.item[id] = flag
+        local _, link = GetItemInfo(id)
+        self:notifyIgnoredChange(link, flag)
+    elseif (petActionIndexFromLink(link)) then
+        local id = petActionIndexFromLink(link)
+        local text = GetPetActionInfo(id)
+        db.ignoreLists.petbar[id] = flag
+        self:notifyIgnoredChange(text, flag)
+    end
+end
+
