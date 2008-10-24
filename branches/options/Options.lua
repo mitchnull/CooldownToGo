@@ -14,6 +14,8 @@ local DefaultFontName = "Friz Quadrata TT"
 
 local _
 
+local LinkPattern = '(%l+):(%d+)'
+
 local function print(text)
     if (DEFAULT_CHAT_FRAME) then 
         DEFAULT_CHAT_FRAME:AddMessage(text)
@@ -64,13 +66,6 @@ local options = {
                     name = L["Locked"],
                     desc = L["Lock/Unlock display frame"],
                     order = 100,
-                },
-                ignoreNext = {
-                    type = 'execute',
-                    name = L["Ignore next action"],
-                    width = 'full',
-                    order = 10,
-                    func = "ignoreNextAction",
                 },
                 holdTime = {
                     type = 'range',
@@ -155,25 +150,54 @@ local options = {
             handler = CooldownToGo,
             order = 50,
             args = {
+                ignoreNext = {
+                    type = 'execute',
+                    name = L["Ignore next action"],
+                    order = 10,
+                    func = "ignoreNextAction",
+                },
+                ignore = {
+                    type = 'input',
+					guiHidden = 'true',
+                    name = L["Ignore"],
+					desc = L["Spell link, item link or petbar:index"],
+                    order = 20,
+					pattern = LinkPattern,
+					get = function() return nil end,
+					set = "ignoreByLink",
+                },
+                remove = {
+                    type = 'input',
+                    name = L["Remove"],
+					desc = L["Spell link, item link or petbar:index"],
+					guiHidden = 'true',
+                    order = 30,
+					pattern = LinkPattern,
+					get = function() return nil end,
+					set = "removeByLink",
+                },
                 spell = {
                     type = 'group',
                     inline = true,
+					name = L["Spells"],
                     cmdHidden = true,
-                    order = 20,
+                    order = 120,
                     args = {},
                 },
                 item = {
                     type = 'group',
                     inline = true,
+					name = L["Items"],
                     cmdHidden = true,
-                    order = 30,
+                    order = 130,
                     args = {},
                 },
                 petbar = {
                     type = 'group',
                     inline = true,
+					name = L["Petbar"],
                     cmdHidden = true,
-                    order = 30,
+                    order = 140,
                     args = {},
                 },
             },
@@ -279,15 +303,20 @@ function CooldownToGo:setColor(info, r, g, b)
 end
 
 function CooldownToGo:notifyOptionsChange()
-	print("### notifyOptionsChange")
     ACR:NotifyChange(self.AppName)
+	-- for some reason the gui is not updated, the below "flipflop" will make it update
+	if (self.ignoreListOpts and InterfaceOptionsFrame:IsShown() and (not self.skipFlipFlop)) then
+		InterfaceOptionsFrame_OpenToCategory(self.opts)
+		InterfaceOptionsFrame_OpenToCategory(self.ignoreListOpts)
+	end
 end
 
 local function updateOpts(opts, db, descFunc)
     local changed
     for id, _ in pairs(opts) do
+		id = tonumber(id)
         if (not db[id]) then
-            opts[id] = nil
+            opts[tostring(id)] = nil
             changed = true
         end
     end
@@ -295,23 +324,11 @@ local function updateOpts(opts, db, descFunc)
         if (flag) then
             local description = descFunc(id)
             if (description) then
-                opts[id] = {
-                    type = 'group',
-                    inline = true,
-                    args = {
-                        desc = {
-                            type = 'description',
-                            name = description,
-							order = 10,
-                        },
-                        ignore = {
-                            type = 'execute',
-                            name = L["Remove"],
-                            func = "removeIgnored",
-							order = 20,
-							width = 'half',
-                        },
-                    },
+                opts[tostring(id)] = {
+                    type = 'toggle',
+					name = description,
+					get = function() return true end,
+					set = "removeIgnored",
                 }
                 changed = true
             end
@@ -322,12 +339,11 @@ local function updateOpts(opts, db, descFunc)
 end
 
 local function getSpellDesc(id)
-    return GetSpellLink(id)
+    return GetSpellInfo(id)
 end
 
 local function getItemDesc(id)
-    local _, link = GetItemInfo(id)
-    return link
+    return GetItemInfo(id)
 end
 
 local function getPetbarDesc(id)
@@ -336,28 +352,33 @@ end
 
 function CooldownToGo:updateIgnoreListOptions()
     local changed
-	print("### updateIgnoreListOptions")
     changed = updateOpts(options.args.ignoreLists.args.spell.args, self.db.profile.ignoreLists.spell, getSpellDesc) or changed
-    changed = updateOpts(options.args.ignoreLists.args.item.args, self.db.profile.ignoreLists.item, getItemDesc)
-    changed = updateOpts(options.args.ignoreLists.args.petbar.args, self.db.profile.ignoreLists.petbar, getPetbarDesc)
+    changed = updateOpts(options.args.ignoreLists.args.item.args, self.db.profile.ignoreLists.item, getItemDesc) or changed
+    changed = updateOpts(options.args.ignoreLists.args.petbar.args, self.db.profile.ignoreLists.petbar, getPetbarDesc) or changed
     if (changed) then
         self:notifyOptionsChange() 
     end
 end
 
 function CooldownToGo:ignoreNextAction()
+	self:Print(L["Next action will be added to ignore list"])
     self.ignoreNext = true
-    -- TODO give some visual feedback
 end
 
 function CooldownToGo:removeIgnored(info)
-    local id = info[#info - 1]
-    local cat = info[#info - 2]
-    if (self.db.profile.ignoreLists[cat][id]) then
-        local text = options.args.ignoreLists.args[cat].args[id].args.desc.name
-        self.db.profile.ignoreLists[cat][id] = nil
-        self:notifyIgnoredChange(text, nil)
-    end
+    local id = info[#info]
+    local cat = info[#info - 1]
+	self.skipFlipFlop = true -- hack to avoid an AceConfigDialog error
+	self:setIgnoredState(cat .. ":" .. id, false)
+	self.skipFlipFlop = nil
+end
+
+function CooldownToGo:ignoreByLink(info, link)
+	return self:setIgnoredState(link, true)
+end
+
+function CooldownToGo:removeByLink(info, link)
+	return self:setIgnoredState(link, false)
 end
 
 --[[
