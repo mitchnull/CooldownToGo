@@ -243,7 +243,7 @@ function CooldownToGo:setupLDB()
         OnTooltipShow = function(tt)
             tt:AddLine(self.AppName)
             tt:AddLine(L["|cffeda55fLeft Click|r to lock/unlock frame"])
-            tt:AddLine(L["|cffeda55fShift + Left Click|r to ignore last cooldown"])
+            tt:AddLine(L["|cffeda55fShift + Left Click|r to ignore next action"])
             tt:AddLine(L["|cffeda55fRight Click|r to open the configuration window"])
         end,
     }
