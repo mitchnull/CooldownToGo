@@ -13,7 +13,7 @@ local AppName = "CooldownToGo"
 local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
-local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true);
+local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 
 -- cache
 
@@ -108,18 +108,35 @@ local function printf(fmt, ...)
 end
 
 local function itemIdFromLink(link)
+    if (not link) then return nil end
     local id = link:match("item:(%d+)")
     return tonumber(id)
 end
 
 local function spellIdFromLink(link)
+    if (not link) then return nil end
     local id = link:match("spell:(%d+)")
     return tonumber(id)
 end
 
+local normalizedSpellLinks = {}
 local function getNormalizedSpellLink(spell)
-	local link = GetSpellLink(spell, Rank1)
-	return link or GetSpellLink(spell, "")
+    local link = normalizedSpellLinks[spell]
+    if (link) then return link end
+    local name, rank = GetSpellInfo(spell)
+    if (not name) then
+        link = ""
+        normalizedSpellLinks[spell] = link
+        return link
+    end
+    if (rank ~= "") then 
+        link = GetSpellLink(name, Rank1)
+    else
+        link = GetSpellLink(name, "")
+    end
+    if (not link) then link = "" end
+    normalizedSpellLinks[spell] = link
+    return link
 end
 
 local function petActionIndexFromLink(link)
@@ -153,11 +170,11 @@ function CooldownToGo:createFrame()
     text:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
     text:SetJustifyH("LEFT")
     text:SetPoint("LEFT", frame, "CENTER", 0, 0)
-	text:SetText("cdtg")
+    text:SetText("cdtg")
     self.text = text
 
     local icon = frame:CreateTexture("CDTGIcon", "OVERLAY")
-	icon:SetTexture(Icon)
+    icon:SetTexture(Icon)
     icon:SetPoint("RIGHT", frame, "CENTER", -2, 0)
     self.icon = icon
 
@@ -250,7 +267,7 @@ function CooldownToGo:OnInitialize()
     if (not self.frame) then
         self:createFrame()
     end
-	self:applySettings()
+    self:applySettings()
     self:setupOptions()
 end
 
@@ -401,6 +418,7 @@ function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
     local spellLink = getNormalizedSpellLink(spell)
     local spellId = spellIdFromLink(spellLink)
+    if (not spellId) then return end
     if (db.ignoreLists.spell[spellId]) then return end
     local name, _, texture = GetSpellInfo(spellId)
     self:showCooldown(texture, GetSpellCooldown, name, 'spell', spellId)
@@ -422,7 +440,8 @@ function CooldownToGo:checkItemCooldown(item)
     -- print("### item: " .. tostring(item))
     local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
     local itemId = itemIdFromLink(itemLink)
-    if (db.ignoreLists.item[itemId]) then return end;
+    if (not itemId) then return end
+    if (db.ignoreLists.item[itemId]) then return end
     self:showCooldown(texture, GetItemCooldown, itemId, 'item', itemId)
 end
 
@@ -453,22 +472,25 @@ function CooldownToGo:notifyIgnoredChange(text, flag)
 end
 
 function CooldownToGo:setIgnoredState(link, flag)
-	if (not flag) then flag = nil end
+    if (not flag) then flag = nil end
     if (spellIdFromLink(link)) then
         local id = spellIdFromLink(link)
-		-- "normalize" to Rank1 id
-		local spell = GetSpellInfo(id)
-		link = getNormalizedSpellLink(spell)
-		id = spellIdFromLink(link)
+        -- "normalize" to Rank1 id
+        local spell = GetSpellInfo(id)
+        link = getNormalizedSpellLink(spell)
+        id = spellIdFromLink(link)
+		if (not id) then return end
         db.ignoreLists.spell[id] = flag 
         self:notifyIgnoredChange(link, flag)
     elseif  (itemIdFromLink(link)) then
         local id = itemIdFromLink(link)
+		if (not id) then return end
         db.ignoreLists.item[id] = flag
         local _, link = GetItemInfo(id)
         self:notifyIgnoredChange(link, flag)
     elseif (petActionIndexFromLink(link)) then
         local id = petActionIndexFromLink(link)
+		if (not id) then return end
         local text = GetPetActionInfo(id)
         db.ignoreLists.petbar[id] = flag
         self:notifyIgnoredChange(text, flag)
