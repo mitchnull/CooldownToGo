@@ -2,7 +2,7 @@
 ## Title: CooldownToGo
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
-## Version: 1.2
+## Version: 1.3
 ## SavedVariables: CooldownToGoDB
 ## LoadManagers: AddonLoader
 ## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDBIcon-1.0

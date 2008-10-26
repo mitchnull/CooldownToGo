@@ -410,6 +410,7 @@ end
 
 function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
     -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
+	if (spellIdx == 0) then return end -- mounts?
     local spell = GetSpellName(spellIdx, bookType)
     self:checkSpellCooldown(spell)
 end
