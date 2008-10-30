@@ -2,9 +2,6 @@
 Name: CooldownToGo
 Revision: $Revision$
 Author(s): mitch0
-Website: http://www.wowace.com/wiki/CooldownToGo
-Documentation: http://www.wowace.com/wiki/CooldownToGo
-SVN: http://svn.wowace.com/wowace/trunk/CooldownToGo/
 Description: Display the reamining cooldown on the last action you tried to use
 License: Public Domain
 ]]
@@ -43,7 +40,6 @@ local DefaultFontPath = GameFontNormal:GetFont()
 local DefaultFontName = "Friz Quadrata TT"
 local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
 
-local Rank1 = "Rank 1"
 -- internal vars
 
 local db
@@ -129,11 +125,8 @@ local function getNormalizedSpellLink(spell)
         normalizedSpellLinks[spell] = link
         return link
     end
-    if (rank ~= "") then 
-        link = GetSpellLink(name, Rank1)
-    else
-        link = GetSpellLink(name, "")
-    end
+    if (rank) then rank = rank:gsub("%d+", "1") end
+    link = GetSpellLink(name, rank)
     if (not link) then link = "" end
     normalizedSpellLinks[spell] = link
     return link
@@ -410,7 +403,7 @@ end
 
 function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
     -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
-	if (spellIdx == 0) then return end -- mounts?
+    if (spellIdx == 0) then return end -- mounts?
     local spell = GetSpellName(spellIdx, bookType)
     self:checkSpellCooldown(spell)
 end
@@ -480,18 +473,18 @@ function CooldownToGo:setIgnoredState(link, flag)
         local spell = GetSpellInfo(id)
         link = getNormalizedSpellLink(spell)
         id = spellIdFromLink(link)
-		if (not id) then return end
+        if (not id) then return end
         db.ignoreLists.spell[id] = flag 
         self:notifyIgnoredChange(link, flag)
     elseif  (itemIdFromLink(link)) then
         local id = itemIdFromLink(link)
-		if (not id) then return end
+        if (not id) then return end
         db.ignoreLists.item[id] = flag
         local _, link = GetItemInfo(id)
         self:notifyIgnoredChange(link, flag)
     elseif (petActionIndexFromLink(link)) then
         local id = petActionIndexFromLink(link)
-		if (not id) then return end
+        if (not id) then return end
         local text = GetPetActionInfo(id)
         db.ignoreLists.petbar[id] = flag
         self:notifyIgnoredChange(text, flag)
