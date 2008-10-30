@@ -153,7 +153,7 @@ function CooldownToGo:createFrame()
     self.frame = frame
 
     local frameBG = frame:CreateTexture("CDTGFrameBG", "BACKGROUND")
-    frameBG:SetTexture(0, 0, 0, 0.42)
+    frameBG:SetTexture(0, 0.42, 0, 0.42)
     frameBG:SetWidth(frame:GetWidth())
     frameBG:SetHeight(frame:GetHeight())
     frameBG:SetPoint("CENTER", frame, "CENTER", 0, 0)
@@ -173,6 +173,11 @@ function CooldownToGo:createFrame()
 
     frame:SetScript("OnMouseDown", function(frame, button)
         if (button == "LeftButton") then
+            if (IsControlKeyDown()) then
+                self.db.profile.locked = true
+                self:applySettings()
+                return
+            end
             self.frame:StartMoving()
             self.isMoving = true
         elseif (button == "RightButton") then
@@ -185,6 +190,17 @@ function CooldownToGo:createFrame()
             self.isMoving = false
             db.point, _, db.relPoint, db.x, db.y = frame:GetPoint()
         end
+    end)
+    frame:SetScript("OnEnter", function(frame)
+        GameTooltip:SetOwner(frame)
+        GameTooltip:AddLine(AppName)
+        GameTooltip:AddLine(L["|cffeda55fDrag|r to move the frame"])
+        GameTooltip:AddLine(L["|cffeda55fControl + Left Click|r to lock frame"])
+        GameTooltip:AddLine(L["|cffeda55fRight Click|r to open the configuration window"])
+        GameTooltip:Show()
+    end)
+    frame:SetScript("OnLeave", function(frame)
+        GameTooltip:Hide()
     end)
     frame:SetScript("OnUpdate", function(frame, elapsed)
         lastUpdate = lastUpdate + elapsed
