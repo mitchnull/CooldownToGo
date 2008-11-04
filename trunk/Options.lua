@@ -158,28 +158,28 @@ local options = {
                 },
                 ignore = {
                     type = 'input',
-					guiHidden = 'true',
+                    guiHidden = 'true',
                     name = L["Ignore"],
-					desc = L["Spell link, item link or petbar:index"],
+                    desc = L["Spell link, item link or petbar:index"],
                     order = 20,
-					pattern = LinkPattern,
-					get = function() return nil end,
-					set = "ignoreByLink",
+                    pattern = LinkPattern,
+                    get = function() return nil end,
+                    set = "ignoreByLink",
                 },
                 remove = {
                     type = 'input',
                     name = L["Remove"],
-					desc = L["Spell link, item link or petbar:index"],
-					guiHidden = 'true',
+                    desc = L["Spell link, item link or petbar:index"],
+                    guiHidden = 'true',
                     order = 30,
-					pattern = LinkPattern,
-					get = function() return nil end,
-					set = "removeByLink",
+                    pattern = LinkPattern,
+                    get = function() return nil end,
+                    set = "removeByLink",
                 },
                 spell = {
                     type = 'group',
                     inline = true,
-					name = L["Spells"],
+                    name = L["Spells"],
                     cmdHidden = true,
                     order = 120,
                     args = {},
@@ -187,7 +187,7 @@ local options = {
                 item = {
                     type = 'group',
                     inline = true,
-					name = L["Items"],
+                    name = L["Items"],
                     cmdHidden = true,
                     order = 130,
                     args = {},
@@ -195,7 +195,7 @@ local options = {
                 petbar = {
                     type = 'group',
                     inline = true,
-					name = L["Petbar"],
+                    name = L["Petbar"],
                     cmdHidden = true,
                     order = 140,
                     args = {},
@@ -225,7 +225,7 @@ function CooldownToGo:setupOptions()
 end
 
 function CooldownToGo:setupLDB()
-    if (not LDB) then return end;
+    if (not LDB) then return end
     local ldb = {
         type = "launcher",
         icon = Icon,
@@ -304,17 +304,17 @@ end
 
 function CooldownToGo:notifyOptionsChange()
     ACR:NotifyChange(self.AppName)
-	-- for some reason the gui is not updated, the below "flipflop" will make it update
-	if (self.ignoreListOpts and InterfaceOptionsFrame:IsShown() and (not self.skipFlipFlop)) then
-		InterfaceOptionsFrame_OpenToCategory(self.opts)
-		InterfaceOptionsFrame_OpenToCategory(self.ignoreListOpts)
-	end
+    -- for some reason the gui is not updated, the below "flipflop" will make it update
+    if (self.ignoreListOpts and InterfaceOptionsFrame:IsShown() and (not self.skipFlipFlop)) then
+        InterfaceOptionsFrame_OpenToCategory(self.opts)
+        InterfaceOptionsFrame_OpenToCategory(self.ignoreListOpts)
+    end
 end
 
 local function updateOpts(opts, db, descFunc)
     local changed
     for id, _ in pairs(opts) do
-		id = tonumber(id)
+        id = tonumber(id)
         if (not db[id]) then
             opts[tostring(id)] = nil
             changed = true
@@ -326,9 +326,9 @@ local function updateOpts(opts, db, descFunc)
             if (description) then
                 opts[tostring(id)] = {
                     type = 'toggle',
-					name = description,
-					get = function() return true end,
-					set = "removeIgnored",
+                    name = description,
+                    get = function() return true end,
+                    set = "removeIgnored",
                 }
                 changed = true
             end
@@ -347,7 +347,9 @@ local function getItemDesc(id)
 end
 
 local function getPetbarDesc(id)
-    return GetPetActionInfo(id)
+    local text, _, _, isToken = GetPetActionInfo(id)
+    text = ((isToken and _G[text] or text) or L['Petbar']) .. '[' .. tostring(id) .. ']'
+    return text
 end
 
 function CooldownToGo:updateIgnoreListOptions()
@@ -361,27 +363,23 @@ function CooldownToGo:updateIgnoreListOptions()
 end
 
 function CooldownToGo:ignoreNextAction()
-	self:Print(L["Next action will be added to ignore list"])
+    self:Print(L["Next action will be added to ignore list"])
     self.ignoreNext = true
 end
 
 function CooldownToGo:removeIgnored(info)
     local id = info[#info]
     local cat = info[#info - 1]
-	self.skipFlipFlop = true -- hack to avoid an AceConfigDialog error
-	self:setIgnoredState(cat .. ":" .. id, false)
-	self.skipFlipFlop = nil
+    self.skipFlipFlop = true -- hack to avoid an AceConfigDialog error
+    self:setIgnoredState(cat .. ":" .. id, false)
+    self.skipFlipFlop = nil
 end
 
 function CooldownToGo:ignoreByLink(info, link)
-	return self:setIgnoredState(link, true)
+    return self:setIgnoredState(link, true)
 end
 
 function CooldownToGo:removeByLink(info, link)
-	return self:setIgnoredState(link, false)
+    return self:setIgnoredState(link, false)
 end
 
---[[
-|T<path to texture>:<size>:<offset>|t eg
-|TInterface\\AddOns\\BetterInbox\\icons\\UI-GoldIcon:12:|t
-]]--
