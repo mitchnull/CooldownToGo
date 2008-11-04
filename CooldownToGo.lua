@@ -30,10 +30,12 @@ local GetInventoryItemLink = GetInventoryItemLink
 local GetContainerItemLink = GetContainerItemLink
 local GetItemInfo = GetItemInfo
 local GetItemCooldown = GetItemCooldown
+local wipe = wipe
 
 -- hard-coded config stuff
 
-local UpdateDelay = .1 -- update frequency == 1/UpdateDelay
+local NormalUpdateDelay = 1.0/10 -- update frequency == 1/NormalUpdateDelay
+local FadingUpdateDelay = 1.0/25 -- update frequency while fading == 1/FadingUpdateDelay, must be <= NormalUpdateDelay
 local Width = 120
 local Height = 30
 local DefaultFontPath = GameFontNormal:GetFont()
@@ -45,6 +47,7 @@ local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
 local db
 local _ -- throwaway
 local lastUpdate = 0 -- time since last real update
+local updateDelay = NormalUpdateDelay
 local fadeStamp -- the timestamp when we should start fading the display
 local hideStamp -- the timestamp when we should hide the display
 local endStamp -- the timestamp when the cooldown will be over
@@ -58,6 +61,8 @@ local isActive = false
 local isAlmostReady = false
 local isReady = false
 local isHidden = false
+
+local ignoredSpells = {} -- contains a map of name -> id (as stored in db.profile.ignoreLists.spell). we need to store ids in the db to avoid locale related issues, but we must match by spell name because there is no generic way of "normalizing" all ranks of a spell to a common spellId
 
 local GCD = 1.5
 
@@ -115,26 +120,21 @@ local function spellIdFromLink(link)
     return tonumber(id)
 end
 
-local normalizedSpellLinks = {}
-local function getNormalizedSpellLink(spell)
-    local link = normalizedSpellLinks[spell]
-    if (link) then return link end
-    local name, rank = GetSpellInfo(spell)
-    if (not name) then
-        link = ""
-        normalizedSpellLinks[spell] = link
-        return link
-    end
-    if (rank) then rank = rank:gsub("%d+", "1") end
-    link = GetSpellLink(name, rank)
-    if (not link) then link = "" end
-    normalizedSpellLinks[spell] = link
-    return link
-end
-
 local function petActionIndexFromLink(link)
     local id = link:match("petbar:(%d+)")
     return tonumber(id)
+end
+
+local function updateIgnoredSpells(ids)
+    wipe(ignoredSpells)
+    for id, flag in pairs(ids) do
+        if (flag) then
+            local name = GetSpellInfo(id)
+            if (name) then -- this should always be true, but let's be sure...
+                ignoredSpells[name] = id
+            end
+        end
+    end
 end
 
 function CooldownToGo:createFrame()
@@ -204,7 +204,7 @@ function CooldownToGo:createFrame()
     end)
     frame:SetScript("OnUpdate", function(frame, elapsed)
         lastUpdate = lastUpdate + elapsed
-        if (lastUpdate < UpdateDelay) then return end
+        if (lastUpdate < updateDelay) then return end
         lastUpdate = 0
         self:OnUpdate(elapsed)
     end)
@@ -273,6 +273,7 @@ function CooldownToGo:OnInitialize()
     self.db.RegisterCallback(self, "OnProfileCopied", "profileChanged")
     self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")
     db = self.db.profile
+    updateIgnoredSpells(db.ignoreLists.spell)
     if (not self.frame) then
         self:createFrame()
     end
@@ -304,6 +305,7 @@ end
 
 function CooldownToGo:profileChanged()
     db = self.db.profile
+    updateIgnoredSpells(db.ignoreLists.spell)
     self:applySettings()
 end
 
@@ -347,18 +349,18 @@ function CooldownToGo:OnUpdate(elapsed)
             self.text:SetText(string.format("%.1f", cd))
         end
     end
-    if (not db.locked) then
+    if (isHidden or not db.locked) then
         return
     end
     if (now > fadeStamp) then
         local alpha = 1 - ((now - fadeStamp) / db.fadeTime)
         if (alpha <= 0) then
-            if (not isHidden) then
-                isHidden = true
-                self.frame:SetAlpha(0)
-            end
+            isHidden = true
+            self.frame:SetAlpha(0)
+            updateDelay = NormalUpdateDelay
         else
             self.frame:SetAlpha(alpha)
+            updateDelay = FadingUpdateDelay
         end
     end
 end
@@ -379,21 +381,18 @@ function CooldownToGo:updateStamps(start, duration, show)
     finishStamp = endStamp + db.fadeTime
     hideStamp = fadeStamp + db.fadeTime
 
-    lastUpdate = UpdateDelay -- to force update in next frame
+    lastUpdate = NormalUpdateDelay -- to force update in next frame
     isAlmostReady = false
+    isHidden = false
     if (show) then
-        isHidden = false
+        updateDelay = NormalUpdateDelay
         self.frame:SetAlpha(1)
         self.frame:Show()
     end
 end
 
-function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, cat, id)
-    if (self.ignoreNext) then
-        self.ignoreNext = nil
-        self:setIgnoredState(cat .. ':' .. id, true)
-        return
-    end
+function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
+    -- printf("### showCooldown: texture: %s, arg: %s", texture, arg)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if (not enabled) or (not start) or (not duration) or (duration <= GCD) then
@@ -426,12 +425,16 @@ end
 
 function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
-    local spellLink = getNormalizedSpellLink(spell)
-    local spellId = spellIdFromLink(spellLink)
-    if (not spellId) then return end
-    if (db.ignoreLists.spell[spellId]) then return end
-    local name, _, texture = GetSpellInfo(spellId)
-    self:showCooldown(texture, GetSpellCooldown, name, 'spell', spellId)
+    local name, _, texture = GetSpellInfo(spell)
+    if (not name) then return end
+    if (ignoredSpells[name]) then return end
+    if (self.ignoreNext) then
+        self.ignoreNext = nil
+        local link = GetSpellLink(spell)
+        self:setIgnoredState(link, true)
+        return
+    end
+    self:showCooldown(texture, GetSpellCooldown, name)
 end
 
 function CooldownToGo:checkInventoryItemCooldown(invSlot)
@@ -452,12 +455,23 @@ function CooldownToGo:checkItemCooldown(item)
     local itemId = itemIdFromLink(itemLink)
     if (not itemId) then return end
     if (db.ignoreLists.item[itemId]) then return end
-    self:showCooldown(texture, GetItemCooldown, itemId, 'item', itemId)
+    if (self.ignoreNext) then
+        self.ignoreNext = nil
+        self:setIgnoredState(itemLink, true)
+        return
+    end
+    self:showCooldown(texture, GetItemCooldown, itemId)
 end
 
 function CooldownToGo:checkPetActionCooldown(index)
+    if (not index or db.ignoreLists.petbar[index]) then return end
     local _, _, texture = GetPetActionInfo(index)
-    self:showCooldown(texture, GetPetActionCooldown, index, 'petbar', index)
+    if (self.ignoreNext) then
+        self.ignoreNext = nil
+        self:setIgnoredState('petbar:' .. tostring(index), true)
+        return
+    end
+    self:showCooldown(texture, GetPetActionCooldown, index)
 end
 
 function CooldownToGo:updateCooldown(event)
@@ -485,24 +499,32 @@ function CooldownToGo:setIgnoredState(link, flag)
     if (not flag) then flag = nil end
     if (spellIdFromLink(link)) then
         local id = spellIdFromLink(link)
-        -- "normalize" to Rank1 id
-        local spell = GetSpellInfo(id)
-        link = getNormalizedSpellLink(spell)
-        id = spellIdFromLink(link)
         if (not id) then return end
+        local spell = GetSpellInfo(id)
+        if (not spell) then return end
+        local oldId = ignoredSpells[spell]
+        if (oldId) then -- avoid dups
+            db.ignoreLists.spell[oldId] = nil
+            ignoredSpells[spell] = nil
+        end
         db.ignoreLists.spell[id] = flag 
+        if (flag) then
+            ignoredSpells[spell] = id
+        end
+        link = GetSpellLink(id) -- to make notify() nicer in case we got only a pseudo-link (just "spell:id")
         self:notifyIgnoredChange(link, flag)
     elseif  (itemIdFromLink(link)) then
         local id = itemIdFromLink(link)
         if (not id) then return end
         db.ignoreLists.item[id] = flag
-        local _, link = GetItemInfo(id)
+        _, link = GetItemInfo(id) -- to make notify() nicer in case we got only a pseudo-link (just "item:id")
         self:notifyIgnoredChange(link, flag)
     elseif (petActionIndexFromLink(link)) then
         local id = petActionIndexFromLink(link)
         if (not id) then return end
-        local text = GetPetActionInfo(id)
         db.ignoreLists.petbar[id] = flag
+        local text, _, _, isToken = GetPetActionInfo(id)
+        text = ((isToken and _G[text] or text) or L['Petbar']) .. '[' .. tostring(id) .. ']'
         self:notifyIgnoredChange(text, flag)
     end
 end
