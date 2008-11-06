@@ -98,12 +98,6 @@ local defaults = {
     },
 }
 
-local function print(text)
-    if (DEFAULT_CHAT_FRAME) then 
-        DEFAULT_CHAT_FRAME:AddMessage(text)
-    end
-end
-
 local function printf(fmt, ...)
     return print(fmt:format(...))
 end
