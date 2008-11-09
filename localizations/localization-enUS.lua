@@ -43,3 +43,6 @@ L["Remove"] = true
 L["Spell link, item link or petbar:index"] = true
 L["added %s to ignore list"] = true
 L["removed %s from ignore list"] = true
+
+L["Grace Period"] = true
+L["Delay before cooldown display is activated (useful for button-smashers)"] = true

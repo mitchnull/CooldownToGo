@@ -16,21 +16,6 @@ local _
 
 local LinkPattern = '(%l+):(%d+)'
 
-local function print(text)
-    if (DEFAULT_CHAT_FRAME) then 
-        DEFAULT_CHAT_FRAME:AddMessage(text)
-    end
-end
-
-local function getFonts()
-    local fonts = SML and SML:List("font") or { [1] = DefaultFontName }
-    local res = {}
-    for i, v in ipairs(fonts) do
-        res[v] = v
-    end
-    return res
-end
-
 local FontOutlines = {
     [""] = L["None"],
     ["OUTLINE"] = L["Normal"],
@@ -94,11 +79,20 @@ local options = {
                     step = 0.1,
                     order = 130,
                 },
+                gracePeriod = {
+                    type = 'range',
+                    name = L["Grace Period"],
+                    desc = L["Delay before cooldown display is activated (useful for button-smashers)"],
+                    min = 0.0,
+                    max = 1.0,
+                    step = 0.05,
+                    order = 131,
+                },
                 font = {
-                    type = 'select',
+                    type = "select", dialogControl = 'LSM30_Font',
                     name = L["Font"],
                     desc = L["Font"],
-                    values = getFonts,
+                    values = AceGUIWidgetLSMlists.font,
                     order = 135
                 },
                 fontSize = {
@@ -123,7 +117,7 @@ local options = {
                     desc = L["Color"],
                     set = "setColor",
                     get = "getColor",
-                    order = 115,
+                    order = 190,
                 },
                 strata = {
                     type = 'select',
