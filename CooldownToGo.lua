@@ -53,11 +53,6 @@ local hideStamp -- the timestamp when we should hide the display
 local endStamp -- the timestamp when the cooldown will be over
 local finishStamp -- the timestamp when the we are finished with this cooldown
 
-local gpStart = {}
-gpStart[GetSpellCooldown] = {}
-gpStart[GetItemCooldown] = {}
-gpStart[GetPetActionCooldown] = {}
-
 local currGetCooldown
 local currArg
 
@@ -395,20 +390,8 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
     -- printf("### showCooldown: texture: %s, arg: %s", texture, arg)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
-    if (not enabled or not start or not duration) then
+    if (not start or (enabled ~= 1) or (duration <= GCD) or ((GetTime() - start) < db.gracePeriod)) then
         return
-    end
-    if (duration <= GCD) then
-        if (db.gracePeriod > 0) then
-            gpStart[getCooldownFunc][arg] = GetTime()
-        end
-        return
-    end
-    if (db.gracePeriod > 0) then
-        local gps = gpStart[getCooldownFunc][arg]
-        if (gps and (GetTime() - gps) <= db.gracePeriod) then
-            return
-        end
     end
     currGetCooldown, currArg = getCooldownFunc, arg
     isActive = true
