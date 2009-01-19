@@ -89,6 +89,7 @@ local defaults = {
         colorR = 1.0,
         colorG = 1.0,
         colorB = 1.0,
+        colorA = 1.0,
         strata = "HIGH",
         gracePeriod = 0.5,
         ignoreLists = {
@@ -240,7 +241,8 @@ function CooldownToGo:applySettings()
     self.frame:ClearAllPoints()
     self.frame:SetPoint(db.point, UIParent, db.relPoint, db.x, db.y)
     self.frame:SetFrameStrata(db.strata)
-    self.text:SetTextColor(db.colorR, db.colorG, db.colorB)
+    self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
+    self.icon:SetAlpha(db.colorA)
     self:applyFontSettings()
 end
 
