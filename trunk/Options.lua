@@ -9,7 +9,7 @@ local LDBIcon = LibStub("LibDBIcon-1.0", true)
 
 local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
 local MinFontSize = 5
-local MaxFontSize = 40
+local MaxFontSize = 240
 local DefaultFontName = "Friz Quadrata TT"
 
 local _
@@ -113,6 +113,7 @@ local options = {
                 },
                 color = {
                     type = 'color',
+                    hasAlpha = true,
                     name = L["Color"],
                     desc = L["Color"],
                     set = "setColor",
@@ -285,14 +286,15 @@ end
 
 function CooldownToGo:getColor(info)
     local db = self.db.profile
-    return db.colorR, db.colorG, db.colorB
+    return db.colorR, db.colorG, db.colorB, db.colorA
 end
 
-function CooldownToGo:setColor(info, r, g, b)
+function CooldownToGo:setColor(info, r, g, b, a)
     local db = self.db.profile
-    db.colorR, db.colorG, db.colorB = r, g, b
+    db.colorR, db.colorG, db.colorB, db.colorA = r, g, b, a
     if (self:IsEnabled()) then
-        self.text:SetTextColor(db.colorR, db.colorG, db.colorB)
+        self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
+        self.icon:SetAlpha(db.colorA)
     end
 end
 
