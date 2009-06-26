@@ -5,7 +5,7 @@
 ## Version: 1.5.4
 ## SavedVariables: CooldownToGoDB
 ## LoadManagers: AddonLoader
-## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, AceGUI-3.0-SharedMediaWidgets, LibDBIcon-1.0
+## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, AceGUI-3.0-SharedMediaWidgets, LibDBIcon-1.0 LibDualSpec-1.0
 ## X-LoadOn-Always: true
 ## X-Category: Combat
 ## X-License: Public Domain

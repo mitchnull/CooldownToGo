@@ -213,6 +213,7 @@ function CooldownToGo:setupOptions()
     self:updateIgnoreListOptions()
     self.ignoreListOpts = self:registerSubOptions('ignoreLists', options.args.ignoreLists)
     local profiles = AceDBOptions:GetOptionsTable(self.db)
+    LibStub("LibDualSpec-1.0"):EnhanceOptions(profiles, self.db)
     profiles.order = 900
     options.args.profiles = profiles
     self.profiles = self:registerSubOptions('profiles', profiles)

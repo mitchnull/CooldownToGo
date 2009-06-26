@@ -266,6 +266,7 @@ end
 
 function CooldownToGo:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
+    LibStub("LibDualSpec-1.0"):EnhanceDatabase(self.db, AppName)
     self.db.RegisterCallback(self, "OnProfileChanged", "profileChanged")
     self.db.RegisterCallback(self, "OnProfileCopied", "profileChanged")
     self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")
