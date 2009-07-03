@@ -10,7 +10,7 @@ local AppName = "CooldownToGo"
 local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
-local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
+local LSM = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 
 -- cache
 
@@ -38,9 +38,9 @@ local NormalUpdateDelay = 1.0/10 -- update frequency == 1/NormalUpdateDelay
 local FadingUpdateDelay = 1.0/25 -- update frequency while fading == 1/FadingUpdateDelay, must be <= NormalUpdateDelay
 local Width = 120
 local Height = 30
-local DefaultFontPath = GameFontNormal:GetFont()
-local DefaultFontName = "Friz Quadrata TT"
-local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
+local DefaultFontName = "Vera Sans Mono"
+local DefaultFontPath = [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMono.ttf]]
+local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
 -- internal vars
 
@@ -208,16 +208,16 @@ end
 
 function CooldownToGo:applyFontSettings(isCallback)
     local dbFontPath
-    if (SML) then
-        dbFontPath = SML:Fetch("font", db.font, true)
+    if (LSM) then
+        dbFontPath = LSM:Fetch("font", db.font, true)
         if (not dbFontPath) then
             if (isCallback) then
                 return
             end
-            SML.RegisterCallback(self, "LibSharedMedia_Registered", "applyFontSettings", true)
+            LSM.RegisterCallback(self, "LibSharedMedia_Registered", "applyFontSettings", true)
             dbFontPath = DefaultFontPath
         else
-            SML.UnregisterCallback(self, "LibSharedMedia_Registered")
+            LSM.UnregisterCallback(self, "LibSharedMedia_Registered")
         end
     else
         dbFontPath = DefaultFontPath
@@ -265,6 +265,16 @@ function CooldownToGo:unlock()
 end
 
 function CooldownToGo:OnInitialize()
+    if (LSM) then
+	LSM:Register("font", "Vera Sans Mono Bold",
+            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoBd.ttf]])
+	LSM:Register("font", "Vera Sans Mono Bold Oblique",
+            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoBI.ttf]])
+	LSM:Register("font", "Vera Sans Mono Oblique",
+            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoIt.ttf]])
+	LSM:Register("font", "Vera Sans Mono",
+            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMono.ttf]])
+    end
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
     LibStub("LibDualSpec-1.0"):EnhanceDatabase(self.db, AppName)
     self.db.RegisterCallback(self, "OnProfileChanged", "profileChanged")
@@ -342,9 +352,9 @@ function CooldownToGo:OnUpdate(elapsed)
             isAlmostReady = true
         end
         if cd > 90 then
-            self.text:SetText(string.format("%d:%02d", cd / 60, cd % 60))
+            self.text:SetText(string.format("%2d:%02d", cd / 60, cd % 60))
         else
-            self.text:SetText(string.format("%.1f", cd))
+            self.text:SetText(string.format("%4.1f", cd))
         end
     end
     if (isHidden or not db.locked) then
