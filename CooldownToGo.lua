@@ -38,8 +38,8 @@ local NormalUpdateDelay = 1.0/10 -- update frequency == 1/NormalUpdateDelay
 local FadingUpdateDelay = 1.0/25 -- update frequency while fading == 1/FadingUpdateDelay, must be <= NormalUpdateDelay
 local Width = 120
 local Height = 30
-local DefaultFontName = "Vera Sans Mono"
-local DefaultFontPath = [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMono.ttf]]
+local DefaultFontName = "Friz Quadrata TT"
+local DefaultFontPath = GameFontNormal:GetFont()
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
 -- internal vars
