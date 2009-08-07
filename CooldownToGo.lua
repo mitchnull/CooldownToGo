@@ -32,6 +32,8 @@ local GetItemInfo = GetItemInfo
 local GetItemCooldown = GetItemCooldown
 local wipe = wipe
 
+local NUM_PET_ACTION_SLOTS = NUM_PET_ACTION_SLOTS
+
 -- hard-coded config stuff
 
 local NormalUpdateDelay = 1.0/10 -- update frequency == 1/NormalUpdateDelay
@@ -41,6 +43,12 @@ local Height = 30
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
+
+local PetSpells = {
+    33395, -- Freeze, Mage, Water Elemental
+    63619, -- Shadowcrawl, Priest, Shadowfiend
+    58861, -- Bash, Shaman, Spirit Wolf
+}
 
 -- internal vars
 
@@ -431,10 +439,25 @@ function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
     self:checkSpellCooldown(spell)
 end
 
+local function findPetActionIndexForSpell(spell)
+    if (not spell) then return end
+--    printf("### findPetActionIndexForSpell(%s)", tostring(spell))
+    for i = 1, NUM_PET_ACTION_SLOTS do
+        local name, sub, _, isToken = GetPetActionInfo(i)
+        if (isToken) then name = _G[name] end
+--        printf("### %s: name: %s, sub: %s, isToken: %s", tostring(i), tostring(name), tostring(sub), tostring(isToken))
+        if (name == spell) then
+            return i
+        end
+    end
+end
+
 function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
     local name, _, texture = GetSpellInfo(spell)
-    if (not name) then return end
+    if (not name) then
+         return self:checkPetActionCooldown(findPetActionIndexForSpell(spell))
+    end
     if (ignoredSpells[name]) then return end
     if (self.ignoreNext) then
         self.ignoreNext = nil
