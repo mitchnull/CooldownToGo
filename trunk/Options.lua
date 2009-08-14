@@ -263,14 +263,6 @@ function CooldownToGo:setupLDB()
     }
 end
 
-function CooldownToGo:toggleLocked(flag)
-    if (flag == nil) then flag = not self.db.profile.locked end
-    if (flag == not self.db.profile.locked) then
-        self.db.profile.locked = flag
-        self:applySettings()
-    end
-end
-
 function CooldownToGo:openConfigDialog()
     InterfaceOptionsFrame_OpenToCategory(self.profiles)
     InterfaceOptionsFrame_OpenToCategory(self.opts)

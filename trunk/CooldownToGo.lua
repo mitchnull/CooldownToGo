@@ -560,3 +560,19 @@ function CooldownToGo:setIgnoredState(link, flag)
     end
 end
 
+function CooldownToGo:toggleLocked(flag)
+    if (flag == nil) then flag = not self.db.profile.locked end
+    if (flag == not self.db.profile.locked) then
+        self.db.profile.locked = flag
+        self:applySettings()
+    end
+end
+
+CONFIGMODE_CALLBACKS = CONFIGMODE_CALLBACKS or {};
+CONFIGMODE_CALLBACKS[AppName] = function(action)
+    if (action == "ON") then
+         CooldownToGo:toggleLocked(false)
+    elseif (action == "OFF") then
+         CooldownToGo:toggleLocked(true)
+    end
+end
