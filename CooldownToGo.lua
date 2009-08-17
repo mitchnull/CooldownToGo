@@ -454,6 +454,7 @@ end
 
 function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
+    if (not spell) then return end
     local name, _, texture = GetSpellInfo(spell)
     if (not name) then
          return self:checkPetActionCooldown(findPetActionIndexForSpell(spell))
@@ -482,6 +483,7 @@ end
 
 function CooldownToGo:checkItemCooldown(item)
     -- print("### item: " .. tostring(item))
+    if (not item) then return end
     local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
     local itemId = itemIdFromLink(itemLink)
     if (not itemId) then return end
