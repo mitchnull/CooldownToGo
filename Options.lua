@@ -88,6 +88,19 @@ local options = {
                     step = 0.05,
                     order = 131,
                 },
+                warnSound = {
+                    type = 'toggle',
+                    name = L["Warning Sound"],
+                    desc = L["Play a sound when the cooldown reaches Ready Time"],
+                    order = 132,
+                },
+                warnSoundName = {
+                    type = "select", dialogControl = 'LSM30_Sound',
+                    disabled = function() return not CooldownToGo.db.profile.warnSound end,
+                    name = L["Warning Sound Name"],
+                    values = AceGUIWidgetLSMlists.sound,
+                    order = 133,
+                },
                 font = {
                     type = "select", dialogControl = 'LSM30_Font',
                     name = L["Font"],
