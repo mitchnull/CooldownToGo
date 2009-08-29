@@ -360,9 +360,9 @@ function CooldownToGo:OnUpdate(elapsed)
             isAlmostReady = true
         end
         if cd > 90 then
-            self.text:SetText(string.format("%2d:%02d", cd / 60, cd % 60))
+            self.text:SetFormattedText("%2d:%02d", cd / 60, cd % 60)
         else
-            self.text:SetText(string.format("%4.1f", cd))
+            self.text:SetFormattedText("%4.1f", cd)
         end
     end
     if (isHidden or not db.locked) then
