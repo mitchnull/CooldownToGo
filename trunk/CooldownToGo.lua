@@ -43,8 +43,8 @@ local Width = 120
 local Height = 30
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
-local DefaultSoundName = "Blizzard: Alarm Clock 1" -- TODO: change this
-local DefaultSoundFile = [[Sound\Interface\AlarmClockWarning1.waw]] -- TODO: change this
+local DefaultSoundName = "Pong"
+local DefaultSoundFile = [[Interface\Addons\]] .. AppName .. [[\sounds\pong.waw]]
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
 --[[
@@ -305,6 +305,15 @@ function CooldownToGo:OnInitialize()
             [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoIt.ttf]])
 	LSM:Register("font", "Vera Sans Mono",
             [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMono.ttf]])
+
+        -- The original sound samples are made by pera and acclivity of freesound.org,
+        -- I just tailored them a bit. Thanks pera and acclivity!
+	LSM:Register("sound", "Pong",
+            [[Interface\Addons\]] .. AppName .. [[\sounds\pong.wav]])
+	LSM:Register("sound", "BeepBeepBeep",
+            [[Interface\Addons\]] .. AppName .. [[\sounds\3beeps.wav]])
+	LSM:Register("sound", "DooDaDee",
+            [[Interface\Addons\]] .. AppName .. [[\sounds\doodadee.wav]])
     end
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
     LibStub("LibDualSpec-1.0"):EnhanceDatabase(self.db, AppName)
