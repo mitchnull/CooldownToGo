@@ -31,6 +31,7 @@ local GetContainerItemLink = GetContainerItemLink
 local GetItemInfo = GetItemInfo
 local GetItemCooldown = GetItemCooldown
 local wipe = wipe
+local PlaySoundFile = PlaySoundFile
 
 local NUM_PET_ACTION_SLOTS = NUM_PET_ACTION_SLOTS
 
@@ -42,13 +43,17 @@ local Width = 120
 local Height = 30
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
+local DefaultSoundName = "Blizzard: Alarm Clock 1" -- TODO: change this
+local DefaultSoundFile = [[Sound\Interface\AlarmClockWarning1.waw]] -- TODO: change this
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
+--[[
 local PetSpells = {
     33395, -- Freeze, Mage, Water Elemental
     63619, -- Shadowcrawl, Priest, Shadowfiend
     58861, -- Bash, Shaman, Spirit Wolf
 }
+]]
 
 -- internal vars
 
@@ -105,6 +110,8 @@ local defaults = {
             item = {},
             petbar = {},
         },
+        warnSound = true,
+        warnSoundName = DefaultSoundName,
     },
 }
 
@@ -214,18 +221,25 @@ function CooldownToGo:createFrame()
     end)
 end
 
-function CooldownToGo:applyFontSettings(isCallback)
+function CooldownToGo:mediaUpdate(event, mediaType, key)
+    if (mediaType == 'font') then
+        if (key == db.font) then
+            self:applyFontSettings()
+        end
+    elseif (mediaType == 'sound') then
+        if (key == db.warnSoundName) then
+            self.soundFile = LSM:Fetch("sound", db.warnSoundName) or DefaultSoundFile
+        end
+    end
+end
+
+function CooldownToGo:applyFontSettings()
     local dbFontPath
     if (LSM) then
         dbFontPath = LSM:Fetch("font", db.font, true)
         if (not dbFontPath) then
-            if (isCallback) then
-                return
-            end
-            LSM.RegisterCallback(self, "LibSharedMedia_Registered", "applyFontSettings", true)
+            LSM.RegisterCallback(self, "LibSharedMedia_Registered", "mediaUpdate")
             dbFontPath = DefaultFontPath
-        else
-            LSM.UnregisterCallback(self, "LibSharedMedia_Registered")
         end
     else
         dbFontPath = DefaultFontPath
@@ -251,6 +265,15 @@ function CooldownToGo:applySettings()
     self.frame:SetFrameStrata(db.strata)
     self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
     self.icon:SetAlpha(db.colorA)
+    if (LSM) then
+        self.soundFile = LSM:Fetch("sound", db.warnSoundName)
+        if (not self.soundFile) then
+            LSM.RegisterCallback(self, "LibSharedMedia_Registered", "mediaUpdate")
+        end
+        self.soundFile = DefaultSoundFile
+    else
+        self.soundFile = DefaultSoundFile
+    end
     self:applyFontSettings()
 end
 
@@ -351,12 +374,14 @@ function CooldownToGo:OnUpdate(elapsed)
             isReady = true
             self.text:SetText(L["Ready"])
             self:updateStamps(currStart, currDuration, true)
---  TODO:   PlaySound()
         end
     else
         local cd = endStamp - now
         if (cd <= db.readyTime and not isAlmostReady) then
             self:updateStamps(currStart, currDuration, true)
+            if (db.warnSound) then
+                PlaySoundFile(self.soundFile)
+            end
             isAlmostReady = true
         end
         if cd > 90 then
@@ -570,7 +595,7 @@ function CooldownToGo:toggleLocked(flag)
     end
 end
 
-CONFIGMODE_CALLBACKS = CONFIGMODE_CALLBACKS or {};
+CONFIGMODE_CALLBACKS = CONFIGMODE_CALLBACKS or {}
 CONFIGMODE_CALLBACKS[AppName] = function(action)
     if (action == "ON") then
          CooldownToGo:toggleLocked(false)
