@@ -44,7 +44,7 @@ local Height = 30
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
 local DefaultSoundName = "Pong"
-local DefaultSoundFile = [[Interface\Addons\]] .. AppName .. [[\sounds\pong.waw]]
+local DefaultSoundFile = [[Interface\Addons\]] .. AppName .. [[\sounds\pong.wav]]
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
 --[[
@@ -269,8 +269,8 @@ function CooldownToGo:applySettings()
         self.soundFile = LSM:Fetch("sound", db.warnSoundName)
         if (not self.soundFile) then
             LSM.RegisterCallback(self, "LibSharedMedia_Registered", "mediaUpdate")
+            self.soundFile = DefaultSoundFile
         end
-        self.soundFile = DefaultSoundFile
     else
         self.soundFile = DefaultSoundFile
     end
