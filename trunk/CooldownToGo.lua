@@ -416,6 +416,9 @@ function CooldownToGo:OnUpdate(elapsed)
 end
 
 function CooldownToGo:updateStamps(start, duration, show)
+    if (not start) then
+         return
+    end
     currStart = start
     currDuration = duration
     local now = GetTime()
