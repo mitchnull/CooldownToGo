@@ -191,6 +191,7 @@ function CooldownToGo:createFrame()
             end
             self.frame:StartMoving()
             self.isMoving = true
+            GameTooltip:Hide()
         elseif (button == "RightButton") then
             self:openConfigDialog()
         end
