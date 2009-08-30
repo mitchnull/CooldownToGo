@@ -417,7 +417,7 @@ end
 
 function CooldownToGo:updateStamps(start, duration, show)
     if (not start) then
-         return
+        return
     end
     currStart = start
     currDuration = duration
