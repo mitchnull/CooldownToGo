@@ -74,7 +74,7 @@ local isActive = false
 local isAlmostReady = false
 local isReady = false
 local isHidden = false
-local soundPlayed = false
+local soundPlayedAt = 0
 
 local ignoredSpells = {} -- contains a map of name -> id (as stored in db.profile.ignoreLists.spell). we need to store ids in the db to avoid locale related issues, but we must match by spell name because there is no generic way of "normalizing" all ranks of a spell to a common spellId
 
@@ -383,7 +383,6 @@ function CooldownToGo:OnUpdate(elapsed)
     if (now >= endStamp) then
         if (not isReady) then
             isReady = true
-            soundPlayed = false
             self.text:SetText(L["Ready"])
             self:updateStamps(currStart, currDuration, true)
         end
@@ -391,9 +390,9 @@ function CooldownToGo:OnUpdate(elapsed)
         local cd = endStamp - now
         if (cd <= db.readyTime and not isAlmostReady) then
             self:updateStamps(currStart, currDuration, true)
-            if (db.warnSound and not soundPlayed) then
+            if (db.warnSound and (now - soundPlayedAt) > db.readyTime) then
                 PlaySoundFile(self.soundFile)
-                soundPlayed = true
+                soundPlayedAt = now
             end
             isAlmostReady = true
         end
