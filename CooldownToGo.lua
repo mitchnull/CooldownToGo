@@ -44,7 +44,7 @@ local Height = 30
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
 local DefaultSoundName = "Pong"
-local DefaultSoundFile = [[Interface\Addons\]] .. AppName .. [[\sounds\pong.wav]]
+local DefaultSoundFile = [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.wav]]
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
 --[[
@@ -300,22 +300,22 @@ end
 function CooldownToGo:OnInitialize()
     if (LSM) then
 	LSM:Register("font", "Vera Sans Mono Bold",
-            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoBd.ttf]])
+            [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoBd.ttf]])
 	LSM:Register("font", "Vera Sans Mono Bold Oblique",
-            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoBI.ttf]])
+            [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoBI.ttf]])
 	LSM:Register("font", "Vera Sans Mono Oblique",
-            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMoIt.ttf]])
+            [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoIt.ttf]])
 	LSM:Register("font", "Vera Sans Mono",
-            [[Interface\Addons\]] .. AppName .. [[\fonts\VeraMono.ttf]])
+            [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMono.ttf]])
 
         -- The original sound samples are made by pera and acclivity of freesound.org,
         -- I just tailored them a bit. Thanks pera and acclivity!
 	LSM:Register("sound", "Pong",
-            [[Interface\Addons\]] .. AppName .. [[\sounds\pong.wav]])
+            [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.wav]])
 	LSM:Register("sound", "BeepBeepBeep",
-            [[Interface\Addons\]] .. AppName .. [[\sounds\3beeps.wav]])
+            [[Interface\AddOns\]] .. AppName .. [[\sounds\3beeps.wav]])
 	LSM:Register("sound", "DooDaDee",
-            [[Interface\Addons\]] .. AppName .. [[\sounds\doodadee.wav]])
+            [[Interface\AddOns\]] .. AppName .. [[\sounds\doodadee.wav]])
     end
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
     LibStub("LibDualSpec-1.0"):EnhanceDatabase(self.db, AppName)

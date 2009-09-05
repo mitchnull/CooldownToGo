@@ -7,7 +7,7 @@ local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0", true)
 
-local Icon = "Interface\\Icons\\Ability_Hunter_Readiness"
+local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 local MinFontSize = 5
 local MaxFontSize = 240
 local DefaultFontName = "Friz Quadrata TT"
