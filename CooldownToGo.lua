@@ -68,6 +68,8 @@ local finishStamp -- the timestamp when the we are finished with this cooldown
 
 local currGetCooldown
 local currArg
+local currStart
+local currDuration
 
 local needUpdate = false
 local isActive = false
@@ -81,6 +83,7 @@ local ignoredSpells = {} -- contains a map of name -> id (as stored in db.profil
 local GCD = 1.5
 
 CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
+local CooldownToGo = CooldownToGo
 CooldownToGo:SetDefaultModuleState(false)
 
 CooldownToGo.AppName = AppName
