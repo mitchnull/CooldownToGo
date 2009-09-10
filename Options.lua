@@ -1,3 +1,4 @@
+local CooldownToGo = CooldownToGo
 local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local ACR = LibStub("AceConfigRegistry-3.0")
