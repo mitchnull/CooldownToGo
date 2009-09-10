@@ -14,6 +14,10 @@ local LSM = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 
 -- cache
 
+local _G = _G
+local tostring = tostring
+local tonumber = tonumber
+local pairs = pairs
 local GetTime = GetTime
 
 local GetActionInfo = GetActionInfo
