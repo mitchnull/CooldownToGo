@@ -11,6 +11,7 @@ local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local LSM = LibStub:GetLibrary("LibSharedMedia-3.0", true)
+local LibDualSpec = LibStub("LibDualSpec-1.0", true)
 
 -- cache
 
@@ -325,7 +326,9 @@ function CooldownToGo:OnInitialize()
             [[Interface\AddOns\]] .. AppName .. [[\sounds\doodadee.wav]])
     end
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
-    LibStub("LibDualSpec-1.0"):EnhanceDatabase(self.db, AppName)
+    if LibDualSpec then
+        LibDualSpec:EnhanceDatabase(self.db, AppName)
+    end
     self.db.RegisterCallback(self, "OnProfileChanged", "profileChanged")
     self.db.RegisterCallback(self, "OnProfileCopied", "profileChanged")
     self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")

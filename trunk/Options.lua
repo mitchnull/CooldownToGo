@@ -5,6 +5,7 @@ local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(CooldownToGo.AppName)
 local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
+local LibDualSpec = LibStub("LibDualSpec-1.0", true)
 local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0", true)
 
@@ -227,7 +228,9 @@ function CooldownToGo:setupOptions()
     self:updateIgnoreListOptions()
     self.ignoreListOpts = self:registerSubOptions('ignoreLists', options.args.ignoreLists)
     local profiles = AceDBOptions:GetOptionsTable(self.db)
-    LibStub("LibDualSpec-1.0"):EnhanceOptions(profiles, self.db)
+    if LibDualSpec then
+        LibDualSpec:EnhanceOptions(profiles, self.db)
+    end
     profiles.order = 900
     options.args.profiles = profiles
     self.profiles = self:registerSubOptions('profiles', profiles)
