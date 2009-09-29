@@ -432,7 +432,7 @@ function CooldownToGo:OnUpdate(elapsed)
     end
 end
 
-function CooldownToGo:updateStamps(start, duration, show)
+function CooldownToGo:updateStamps(start, duration, show, startHidden)
     if not start then
         return
     end
@@ -456,8 +456,13 @@ function CooldownToGo:updateStamps(start, duration, show)
     isHidden = false
     if show then
         updateDelay = NormalUpdateDelay
-        self.frame:SetAlpha(1)
         self.frame:Show()
+        if startHidden then
+            isHidden = true
+            self.frame:SetAlpha(0)
+        else
+            self.frame:SetAlpha(1)
+        end
     end
 end
 
@@ -466,7 +471,9 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if not start or enabled ~= 1 or duration <= GCD then
-        lastTexture, lastGetCooldown, lastArg = texture, getCooldownFunc, arg
+        if not isActive then
+            lastTexture, lastGetCooldown, lastArg = texture, getCooldownFunc, arg
+        end
         return
     end
     if GetTime() - start < db.gracePeriod then
@@ -579,7 +586,7 @@ function CooldownToGo:updateCooldown(event)
             isReady = false
             isAlmostReady = false
             self.icon:SetTexture(lastTexture)
-            self:updateStamps(start, duration, true)
+            self:updateStamps(start, duration, true, true)
             self.frame:SetAlpha(0)
         end
         return
