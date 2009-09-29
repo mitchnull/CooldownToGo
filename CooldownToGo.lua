@@ -76,6 +76,10 @@ local currArg
 local currStart
 local currDuration
 
+local lastTexture
+local lastGetCooldown
+local lastArg
+
 local needUpdate = false
 local isActive = false
 local isAlmostReady = false
@@ -461,7 +465,11 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
     -- printf("### showCooldown: texture: %s, arg: %s", texture, arg)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
-    if not start or enabled ~= 1 or duration <= GCD or (GetTime() - start) < db.gracePeriod then
+    if not start or enabled ~= 1 or duration <= GCD then
+        lastTexture, lastGetCooldown, lastArg = texture, getCooldownFunc, arg
+        return
+    end
+    if GetTime() - start < db.gracePeriod then
         return
     end
     currGetCooldown, currArg = getCooldownFunc, arg
@@ -560,6 +568,20 @@ end
 function CooldownToGo:updateCooldown(event)
     -- printf("### updateCooldown: %s", tostring(event))
     if not isActive then
+        if lastGetCooldown then
+            local start, duration, enabled = lastGetCooldown(lastArg)
+            if not start or enabled ~= 1 or duration <= GCD then
+                return
+            end
+            currGetCooldown, currArg = lastGetCooldown, lastArg
+            lastGetCooldown = nil
+            isActive = true
+            isReady = false
+            isAlmostReady = false
+            self.icon:SetTexture(lastTexture)
+            self:updateStamps(start, duration, true)
+            self.frame:SetAlpha(0)
+        end
         return
     end
     if isReady then
