@@ -129,13 +129,13 @@ local function printf(fmt, ...)
 end
 
 local function itemIdFromLink(link)
-    if (not link) then return nil end
+    if not link then return nil end
     local id = link:match("item:(%d+)")
     return tonumber(id)
 end
 
 local function spellIdFromLink(link)
-    if (not link) then return nil end
+    if not link then return nil end
     local id = link:match("spell:(%d+)")
     return tonumber(id)
 end
@@ -148,9 +148,9 @@ end
 local function updateIgnoredSpells(ids)
     wipe(ignoredSpells)
     for id, flag in pairs(ids) do
-        if (flag) then
+        if flag then
             local name = GetSpellInfo(id)
-            if (name) then -- this should always be true, but let's be sure...
+            if name then -- this should always be true, but let's be sure...
                 ignoredSpells[name] = id
             end
         end
@@ -192,8 +192,8 @@ function CooldownToGo:createFrame()
     self.icon = icon
 
     frame:SetScript("OnMouseDown", function(frame, button)
-        if (button == "LeftButton") then
-            if (IsControlKeyDown()) then
+        if button == "LeftButton" then
+            if IsControlKeyDown() then
                 self.db.profile.locked = true
                 self:applySettings()
                 return
@@ -201,12 +201,12 @@ function CooldownToGo:createFrame()
             self.frame:StartMoving()
             self.isMoving = true
             GameTooltip:Hide()
-        elseif (button == "RightButton") then
+        elseif button == "RightButton" then
             self:openConfigDialog()
         end
     end)
     frame:SetScript("OnMouseUp", function(frame, button)
-        if (self.isMoving and button == "LeftButton") then
+        if self.isMoving and button == "LeftButton" then
             self.frame:StopMovingOrSizing()
             self.isMoving = false
             db.point, _, db.relPoint, db.x, db.y = frame:GetPoint()
@@ -225,19 +225,19 @@ function CooldownToGo:createFrame()
     end)
     frame:SetScript("OnUpdate", function(frame, elapsed)
         lastUpdate = lastUpdate + elapsed
-        if (lastUpdate < updateDelay) then return end
+        if lastUpdate < updateDelay then return end
         lastUpdate = 0
         self:OnUpdate(elapsed)
     end)
 end
 
 function CooldownToGo:mediaUpdate(event, mediaType, key)
-    if (mediaType == 'font') then
-        if (key == db.font) then
+    if mediaType == 'font' then
+        if key == db.font then
             self:applyFontSettings()
         end
-    elseif (mediaType == 'sound') then
-        if (key == db.warnSoundName) then
+    elseif mediaType == 'sound' then
+        if key == db.warnSoundName then
             self.soundFile = LSM:Fetch("sound", db.warnSoundName) or DefaultSoundFile
         end
     end
@@ -245,9 +245,9 @@ end
 
 function CooldownToGo:applyFontSettings()
     local dbFontPath
-    if (LSM) then
+    if LSM then
         dbFontPath = LSM:Fetch("font", db.font, true)
-        if (not dbFontPath) then
+        if not dbFontPath then
             LSM.RegisterCallback(self, "LibSharedMedia_Registered", "mediaUpdate")
             dbFontPath = DefaultFontPath
         end
@@ -256,7 +256,7 @@ function CooldownToGo:applyFontSettings()
     end
     local fontPath, fontSize, fontOutline = self.text:GetFont()
     fontOutline = fontOutline or ""
-    if (dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline) then
+    if dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline then
         self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
     end
     self.icon:SetHeight(db.fontSize)
@@ -264,8 +264,8 @@ function CooldownToGo:applyFontSettings()
 end
 
 function CooldownToGo:applySettings()
-    if (not self:IsEnabled()) then return end
-    if (db.locked) then
+    if not self:IsEnabled() then return end
+    if db.locked then
         self:lock()
     else
         self:unlock()
@@ -275,9 +275,9 @@ function CooldownToGo:applySettings()
     self.frame:SetFrameStrata(db.strata)
     self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
     self.icon:SetAlpha(db.colorA)
-    if (LSM) then
+    if LSM then
         self.soundFile = LSM:Fetch("sound", db.warnSoundName)
-        if (not self.soundFile) then
+        if not self.soundFile then
             LSM.RegisterCallback(self, "LibSharedMedia_Registered", "mediaUpdate")
             self.soundFile = DefaultSoundFile
         end
@@ -290,7 +290,7 @@ end
 function CooldownToGo:lock()
     self.frame:EnableMouse(false)
     self.frameBG:Hide()
-    if (isActive) then
+    if isActive then
         self:updateStamps(currStart, currDuration, true)
     else
         self.frame:Hide()
@@ -306,7 +306,7 @@ function CooldownToGo:unlock()
 end
 
 function CooldownToGo:OnInitialize()
-    if (LSM) then
+    if LSM then
 	LSM:Register("font", "Vera Sans Mono Bold",
             [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoBd.ttf]])
 	LSM:Register("font", "Vera Sans Mono Bold Oblique",
@@ -334,7 +334,7 @@ function CooldownToGo:OnInitialize()
     self.db.RegisterCallback(self, "OnProfileReset", "profileChanged")
     db = self.db.profile
     updateIgnoredSpells(db.ignoreLists.spell)
-    if (not self.frame) then
+    if not self.frame then
         self:createFrame()
     end
     self:applySettings()
@@ -356,7 +356,7 @@ function CooldownToGo:OnEnable(first)
 end
 
 function CooldownToGo:OnDisable()
-    if (self.frame) then
+    if self.frame then
         self.frame:Hide()
     end
     self:UnhookAll()
@@ -370,19 +370,19 @@ function CooldownToGo:profileChanged()
 end
 
 function CooldownToGo:OnUpdate(elapsed)
-    if (not isActive) then
+    if not isActive then
         return
     end
-    if (needUpdate) then
+    if needUpdate then
         needUpdate = false
         local start, duration = currGetCooldown(currArg)
-        if (currStart ~= start or currDuration ~= duration) then
+        if currStart ~= start or currDuration ~= duration then
             self:updateStamps(start, duration, false)
         end
     end
     local now = GetTime()
-    if (now > finishStamp) then
-        if (db.locked) then
+    if now > finishStamp then
+        if db.locked then
             self.frame:Hide()
         end
         isActive = false
@@ -390,17 +390,17 @@ function CooldownToGo:OnUpdate(elapsed)
         self.icon:SetTexture(nil)
         return
     end
-    if (now >= endStamp) then
-        if (not isReady) then
+    if now >= endStamp then
+        if not isReady then
             isReady = true
             self.text:SetText(L["Ready"])
             self:updateStamps(currStart, currDuration, true)
         end
     else
         local cd = endStamp - now
-        if (cd <= db.readyTime and not isAlmostReady) then
+        if cd <= db.readyTime and not isAlmostReady then
             self:updateStamps(currStart, currDuration, true)
-            if (db.warnSound and (now - soundPlayedAt) > db.readyTime) then
+            if db.warnSound and (now - soundPlayedAt) > db.readyTime then
                 PlaySoundFile(self.soundFile)
                 soundPlayedAt = now
             end
@@ -412,12 +412,12 @@ function CooldownToGo:OnUpdate(elapsed)
             self.text:SetFormattedText("%4.1f", cd)
         end
     end
-    if (isHidden or not db.locked) then
+    if isHidden or not db.locked then
         return
     end
-    if (now > fadeStamp) then
+    if now > fadeStamp then
         local alpha = 1 - ((now - fadeStamp) / db.fadeTime)
-        if (alpha <= 0) then
+        if alpha <= 0 then
             isHidden = true
             self.frame:SetAlpha(0)
             updateDelay = NormalUpdateDelay
@@ -429,17 +429,17 @@ function CooldownToGo:OnUpdate(elapsed)
 end
 
 function CooldownToGo:updateStamps(start, duration, show)
-    if (not start) then
+    if not start then
         return
     end
     currStart = start
     currDuration = duration
     local now = GetTime()
     endStamp = start + duration
-    if (endStamp < now) then
+    if endStamp < now then
         endStamp = now
     end
-    if (now + db.holdTime >= endStamp) then
+    if now + db.holdTime >= endStamp then
         fadeStamp = endStamp
     else
         fadeStamp = now + db.holdTime
@@ -450,7 +450,7 @@ function CooldownToGo:updateStamps(start, duration, show)
     lastUpdate = NormalUpdateDelay -- to force update in next frame
     isAlmostReady = false
     isHidden = false
-    if (show) then
+    if show then
         updateDelay = NormalUpdateDelay
         self.frame:SetAlpha(1)
         self.frame:Show()
@@ -461,7 +461,7 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
     -- printf("### showCooldown: texture: %s, arg: %s", texture, arg)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
-    if (not start or (enabled ~= 1) or (duration <= GCD) or ((GetTime() - start) < db.gracePeriod)) then
+    if not start or enabled ~= 1 or duration <= GCD or (GetTime() - start) < db.gracePeriod then
         return
     end
     currGetCooldown, currArg = getCooldownFunc, arg
@@ -475,28 +475,28 @@ end
 function CooldownToGo:checkActionCooldown(slot)
     local type, id, subtype = GetActionInfo(slot)
     -- printf("### action: %s, type=%s, id=%s, subtype=%s", tostring(slot), tostring(type), tostring(id), tostring(subtype))
-    if (type == 'spell') then
+    if type == 'spell' then
         self:checkSpellCooldownByIdx(id, subtype)
-    elseif (type == 'item') then
+    elseif type == 'item' then
         self:checkItemCooldown(id)
     end
 end
 
 function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
     -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
-    if (spellIdx == 0) then return end -- mounts?
+    if spellIdx == 0 then return end -- mounts?
     local spell = GetSpellName(spellIdx, bookType)
     self:checkSpellCooldown(spell)
 end
 
 local function findPetActionIndexForSpell(spell)
-    if (not spell) then return end
+    if not spell then return end
 --    printf("### findPetActionIndexForSpell(%s)", tostring(spell))
     for i = 1, NUM_PET_ACTION_SLOTS do
         local name, sub, _, isToken = GetPetActionInfo(i)
-        if (isToken) then name = _G[name] end
+        if isToken then name = _G[name] end
 --        printf("### %s: name: %s, sub: %s, isToken: %s", tostring(i), tostring(name), tostring(sub), tostring(isToken))
-        if (name == spell) then
+        if name == spell then
             return i
         end
     end
@@ -504,13 +504,13 @@ end
 
 function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
-    if (not spell) then return end
+    if not spell then return end
     local name, _, texture = GetSpellInfo(spell)
-    if (not name) then
+    if not name then
          return self:checkPetActionCooldown(findPetActionIndexForSpell(spell))
     end
-    if (ignoredSpells[name]) then return end
-    if (self.ignoreNext) then
+    if ignoredSpells[name] then return end
+    if self.ignoreNext then
         self.ignoreNext = nil
         local link = GetSpellLink(spell)
         self:setIgnoredState(link, true)
@@ -533,12 +533,12 @@ end
 
 function CooldownToGo:checkItemCooldown(item)
     -- print("### item: " .. tostring(item))
-    if (not item) then return end
+    if not item then return end
     local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
     local itemId = itemIdFromLink(itemLink)
-    if (not itemId) then return end
-    if (db.ignoreLists.item[itemId]) then return end
-    if (self.ignoreNext) then
+    if not itemId then return end
+    if db.ignoreLists.item[itemId] then return end
+    if self.ignoreNext then
         self.ignoreNext = nil
         self:setIgnoredState(itemLink, true)
         return
@@ -547,9 +547,9 @@ function CooldownToGo:checkItemCooldown(item)
 end
 
 function CooldownToGo:checkPetActionCooldown(index)
-    if (not index or db.ignoreLists.petbar[index]) then return end
+    if not index or db.ignoreLists.petbar[index] then return end
     local _, _, texture = GetPetActionInfo(index)
-    if (self.ignoreNext) then
+    if self.ignoreNext then
         self.ignoreNext = nil
         self:setIgnoredState('petbar:' .. tostring(index), true)
         return
@@ -559,18 +559,18 @@ end
 
 function CooldownToGo:updateCooldown(event)
     -- printf("### updateCooldown: %s", tostring(event))
-    if (not isActive) then
+    if not isActive then
         return
     end
-    if (isReady) then
+    if isReady then
         return
     end
     needUpdate = true
 end
 
 function CooldownToGo:notifyIgnoredChange(text, flag)
-    if (not text) then return end
-    if (flag) then
+    if not text then return end
+    if flag then
         self:Print(L["added %s to ignore list"]:format(text))
     else
         self:Print(L["removed %s from ignore list"]:format(text))
@@ -579,32 +579,32 @@ function CooldownToGo:notifyIgnoredChange(text, flag)
 end
 
 function CooldownToGo:setIgnoredState(link, flag)
-    if (not flag) then flag = nil end
-    if (spellIdFromLink(link)) then
+    if not flag then flag = nil end
+    if spellIdFromLink(link) then
         local id = spellIdFromLink(link)
-        if (not id) then return end
+        if not id then return end
         local spell = GetSpellInfo(id)
-        if (not spell) then return end
+        if not spell then return end
         local oldId = ignoredSpells[spell]
-        if (oldId) then -- avoid dups
+        if oldId then -- avoid dups
             db.ignoreLists.spell[oldId] = nil
             ignoredSpells[spell] = nil
         end
         db.ignoreLists.spell[id] = flag 
-        if (flag) then
+        if flag then
             ignoredSpells[spell] = id
         end
         link = GetSpellLink(id) -- to make notify() nicer in case we got only a pseudo-link (just "spell:id")
         self:notifyIgnoredChange(link, flag)
-    elseif  (itemIdFromLink(link)) then
+    elseif itemIdFromLink(link) then
         local id = itemIdFromLink(link)
-        if (not id) then return end
+        if not id then return end
         db.ignoreLists.item[id] = flag
         _, link = GetItemInfo(id) -- to make notify() nicer in case we got only a pseudo-link (just "item:id")
         self:notifyIgnoredChange(link, flag)
-    elseif (petActionIndexFromLink(link)) then
+    elseif petActionIndexFromLink(link) then
         local id = petActionIndexFromLink(link)
-        if (not id) then return end
+        if not id then return end
         db.ignoreLists.petbar[id] = flag
         local text, _, _, isToken = GetPetActionInfo(id)
         text = ((isToken and _G[text] or text) or L['Petbar']) .. '[' .. tostring(id) .. ']'
@@ -613,8 +613,8 @@ function CooldownToGo:setIgnoredState(link, flag)
 end
 
 function CooldownToGo:toggleLocked(flag)
-    if (flag == nil) then flag = not self.db.profile.locked end
-    if (flag == not self.db.profile.locked) then
+    if flag == nil then flag = not self.db.profile.locked end
+    if flag == not self.db.profile.locked then
         self.db.profile.locked = flag
         self:applySettings()
     end
@@ -622,9 +622,9 @@ end
 
 CONFIGMODE_CALLBACKS = CONFIGMODE_CALLBACKS or {}
 CONFIGMODE_CALLBACKS[AppName] = function(action)
-    if (action == "ON") then
+    if action == "ON" then
          CooldownToGo:toggleLocked(false)
-    elseif (action == "OFF") then
+    elseif action == "OFF" then
          CooldownToGo:toggleLocked(true)
     end
 end
