@@ -645,6 +645,7 @@ function CooldownToGo:toggleLocked(flag)
     if flag == nil then flag = not self.db.profile.locked end
     if flag == not self.db.profile.locked then
         self.db.profile.locked = flag
+        self:notifyOptionsChange()
         self:applySettings()
     end
 end

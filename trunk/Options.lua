@@ -4,10 +4,8 @@ local ACD = LibStub("AceConfigDialog-3.0")
 local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(CooldownToGo.AppName)
-local SML = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 local LibDualSpec = LibStub("LibDualSpec-1.0", true)
 local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
-local LDBIcon = LibStub("LibDBIcon-1.0", true)
 
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 local MinFontSize = 5
@@ -261,23 +259,6 @@ function CooldownToGo:setupLDB()
         end,
     }
     LDB:NewDataObject(self.AppName, ldb)
-    if not LDBIcon then return end
-    LDBIcon:Register(self.AppName, ldb, self.db.profile.minimap)
-    options.args.main.args.minimap = {
-        type = 'toggle',
-        name = L["Hide minimap icon"],
-        width = 'full',
-        order = 111,
-        get = function() return self.db.profile.minimap.hide end,
-        set = function(info, value)
-            if value then
-                LDBIcon:Hide(self.AppName)
-            else
-                LDBIcon:Show(self.AppName)
-            end
-            self.db.profile.minimap.hide = value
-        end,
-    }
 end
 
 function CooldownToGo:openConfigDialog()
@@ -310,11 +291,7 @@ end
 
 function CooldownToGo:notifyOptionsChange()
     ACR:NotifyChange(self.AppName)
-    -- for some reason the gui is not updated, the below "flipflop" will make it update
-    if self.ignoreListOpts and InterfaceOptionsFrame:IsShown() and (not self.skipFlipFlop) then
-        InterfaceOptionsFrame_OpenToCategory(self.opts)
-        InterfaceOptionsFrame_OpenToCategory(self.ignoreListOpts)
-    end
+    ACR:NotifyChange(self.AppName .. ".ignoreLists") 
 end
 
 local function updateOpts(opts, db, descFunc)
@@ -376,9 +353,7 @@ end
 function CooldownToGo:removeIgnored(info)
     local id = info[#info]
     local cat = info[#info - 1]
-    self.skipFlipFlop = true -- hack to avoid an AceConfigDialog error
     self:setIgnoredState(cat .. ":" .. id, false)
-    self.skipFlipFlop = nil
 end
 
 function CooldownToGo:ignoreByLink(info, link)
