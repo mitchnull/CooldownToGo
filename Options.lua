@@ -238,18 +238,18 @@ function CooldownToGo:setupOptions()
 end
 
 function CooldownToGo:setupLDB()
-    if (not LDB) then return end
+    if not LDB then return end
     local ldb = {
         type = "launcher",
         icon = Icon,
         OnClick = function(frame, button)
-            if (button == "LeftButton") then
-                if (IsShiftKeyDown()) then
+            if button == "LeftButton" then
+                if IsShiftKeyDown() then
                     self:ignoreNextAction()
                 else
                     self:toggleLocked()
                 end
-            elseif (button == "RightButton") then
+            elseif button == "RightButton" then
                 self:openConfigDialog()
             end
         end,
@@ -261,7 +261,7 @@ function CooldownToGo:setupLDB()
         end,
     }
     LDB:NewDataObject(self.AppName, ldb)
-    if (not LDBIcon) then return end
+    if not LDBIcon then return end
     LDBIcon:Register(self.AppName, ldb, self.db.profile.minimap)
     options.args.main.args.minimap = {
         type = 'toggle',
@@ -270,7 +270,7 @@ function CooldownToGo:setupLDB()
         order = 111,
         get = function() return self.db.profile.minimap.hide end,
         set = function(info, value)
-            if (value) then
+            if value then
                 LDBIcon:Hide(self.AppName)
             else
                 LDBIcon:Show(self.AppName)
@@ -302,7 +302,7 @@ end
 function CooldownToGo:setColor(info, r, g, b, a)
     local db = self.db.profile
     db.colorR, db.colorG, db.colorB, db.colorA = r, g, b, a
-    if (self:IsEnabled()) then
+    if self:IsEnabled() then
         self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
         self.icon:SetAlpha(db.colorA)
     end
@@ -311,7 +311,7 @@ end
 function CooldownToGo:notifyOptionsChange()
     ACR:NotifyChange(self.AppName)
     -- for some reason the gui is not updated, the below "flipflop" will make it update
-    if (self.ignoreListOpts and InterfaceOptionsFrame:IsShown() and (not self.skipFlipFlop)) then
+    if self.ignoreListOpts and InterfaceOptionsFrame:IsShown() and (not self.skipFlipFlop) then
         InterfaceOptionsFrame_OpenToCategory(self.opts)
         InterfaceOptionsFrame_OpenToCategory(self.ignoreListOpts)
     end
@@ -321,15 +321,15 @@ local function updateOpts(opts, db, descFunc)
     local changed
     for id, _ in pairs(opts) do
         id = tonumber(id)
-        if (not db[id]) then
+        if not db[id] then
             opts[tostring(id)] = nil
             changed = true
         end
     end
     for id, flag in pairs(db) do
-        if (flag) then
+        if flag then
             local description = descFunc(id)
-            if (description) then
+            if description then
                 opts[tostring(id)] = {
                     type = 'toggle',
                     name = description,
@@ -363,7 +363,7 @@ function CooldownToGo:updateIgnoreListOptions()
     changed = updateOpts(options.args.ignoreLists.args.spell.args, self.db.profile.ignoreLists.spell, getSpellDesc) or changed
     changed = updateOpts(options.args.ignoreLists.args.item.args, self.db.profile.ignoreLists.item, getItemDesc) or changed
     changed = updateOpts(options.args.ignoreLists.args.petbar.args, self.db.profile.ignoreLists.petbar, getPetbarDesc) or changed
-    if (changed) then
+    if changed then
         self:notifyOptionsChange() 
     end
 end
