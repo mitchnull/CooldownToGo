@@ -11,6 +11,7 @@ local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local LSM = LibStub:GetLibrary("LibSharedMedia-3.0", true)
+local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 local LibDualSpec = LibStub("LibDualSpec-1.0", true)
 
 -- cache
@@ -91,7 +92,7 @@ local ignoredSpells = {} -- contains a map of name -> id (as stored in db.profil
 
 local GCD = 1.5
 
-CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0")
+CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceHook-3.0", "AceEvent-3.0")
 local CooldownToGo = CooldownToGo
 CooldownToGo:SetDefaultModuleState(false)
 
@@ -145,6 +146,7 @@ local function spellIdFromLink(link)
 end
 
 local function petActionIndexFromLink(link)
+    if not link then return nil end
     local id = link:match("petbar:(%d+)")
     return tonumber(id)
 end
@@ -311,22 +313,22 @@ end
 
 function CooldownToGo:OnInitialize()
     if LSM then
-	LSM:Register("font", "Vera Sans Mono Bold",
+        LSM:Register("font", "Vera Sans Mono Bold",
             [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoBd.ttf]])
-	LSM:Register("font", "Vera Sans Mono Bold Oblique",
+        LSM:Register("font", "Vera Sans Mono Bold Oblique",
             [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoBI.ttf]])
-	LSM:Register("font", "Vera Sans Mono Oblique",
+        LSM:Register("font", "Vera Sans Mono Oblique",
             [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMoIt.ttf]])
-	LSM:Register("font", "Vera Sans Mono",
+        LSM:Register("font", "Vera Sans Mono",
             [[Interface\AddOns\]] .. AppName .. [[\fonts\VeraMono.ttf]])
 
         -- The original sound samples are made by pera and acclivity of freesound.org,
         -- I just tailored them a bit. Thanks pera and acclivity!
-	LSM:Register("sound", "Pong",
+        LSM:Register("sound", "Pong",
             [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.wav]])
-	LSM:Register("sound", "BeepBeepBeep",
+        LSM:Register("sound", "BeepBeepBeep",
             [[Interface\AddOns\]] .. AppName .. [[\sounds\3beeps.wav]])
-	LSM:Register("sound", "DooDaDee",
+        LSM:Register("sound", "DooDaDee",
             [[Interface\AddOns\]] .. AppName .. [[\sounds\doodadee.wav]])
     end
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
@@ -343,6 +345,7 @@ function CooldownToGo:OnInitialize()
     end
     self:applySettings()
     self:setupOptions()
+    self:setupLDB()
 end
 
 function CooldownToGo:OnEnable(first)
@@ -600,9 +603,9 @@ end
 function CooldownToGo:notifyIgnoredChange(text, flag)
     if not text then return end
     if flag then
-        self:Print(L["added %s to ignore list"]:format(text))
+        self:printf(L["added %s to ignore list"], text)
     else
-        self:Print(L["removed %s from ignore list"]:format(text))
+        self:printf(L["removed %s from ignore list"], text)
     end
     self:updateIgnoreListOptions()
 end
@@ -642,13 +645,86 @@ function CooldownToGo:setIgnoredState(link, flag)
 end
 
 function CooldownToGo:toggleLocked(flag)
-    if flag == nil then flag = not self.db.profile.locked end
+    if flag == nil
+         then flag = not self.db.profile.locked
+    end
     if flag == not self.db.profile.locked then
         self.db.profile.locked = flag
         self:notifyOptionsChange()
         self:applySettings()
     end
 end
+
+function CooldownToGo:setupLDB()
+    local ldb = {
+        type = "launcher",
+        icon = Icon,
+        OnClick = function(frame, button)
+            if button == "LeftButton" then
+                if IsShiftKeyDown() then
+                    self:ignoreNextAction()
+                else
+                    self:toggleLocked()
+                end
+            elseif button == "RightButton" then
+                self:openConfigDialog()
+            end
+        end,
+        OnTooltipShow = function(tt)
+            tt:AddLine(self.AppName)
+            tt:AddLine(L["|cffeda55fLeft Click|r to lock/unlock frame"])
+            tt:AddLine(L["|cffeda55fShift + Left Click|r to ignore next action"])
+            tt:AddLine(L["|cffeda55fRight Click|r to open the configuration window"])
+        end,
+    }
+    LDB:NewDataObject(self.AppName, ldb)
+end
+
+function CooldownToGo:ignoreNextAction()
+    self:printf(L["Next action will be added to ignore list"])
+    self.ignoreNext = true
+end
+
+function CooldownToGo:ignoreByLink(link)
+    return self:setIgnoredState(link, true)
+end
+
+function CooldownToGo:removeByLink(link)
+    return self:setIgnoredState(link, false)
+end
+
+function CooldownToGo:printf(fmt, ...)
+    fmt = "|cff33ff99" .. AppName .. "|r: " .. fmt
+    print(fmt:format(...))
+end
+
+-- Stubs for CooldownToGo_Options
+
+function CooldownToGo:notifyOptionsChange()
+end
+
+-- register slash command
+
+SLASH_COOLDOWNTOGO1 = "/cooldowntogo"
+SLASH_COOLDOWNTOGO2 = "/cdtg"
+SlashCmdList["COOLDOWNTOGO"] = function(msg)
+    msg = strtrim(msg or "")
+    local _, _, cmd, param = msg:find("(%a*)%s*(.*)")
+    cmd = cmd and cmd:lower()
+    if cmd == "locked" then
+        CooldownToGo:toggleLocked()
+    elseif cmd == "ignorenext" then
+        CooldownToGo:ignoreNextAction()
+    elseif cmd == "ignore" then
+        CooldownToGo:ignoreByLink(param)
+    elseif cmd == "remove" then
+        CooldownToGo:removeByLink(param)
+    else
+        CooldownToGo:openConfigDialog()
+    end
+end
+
+-- CONFIGMODE
 
 CONFIGMODE_CALLBACKS = CONFIGMODE_CALLBACKS or {}
 CONFIGMODE_CALLBACKS[AppName] = function(action)

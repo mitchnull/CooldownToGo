@@ -1,13 +1,10 @@
 local CooldownToGo = CooldownToGo
-local AceConfig = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(CooldownToGo.AppName)
 local LibDualSpec = LibStub("LibDualSpec-1.0", true)
-local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 
-local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 local MinFontSize = 5
 local MaxFontSize = 240
 local DefaultFontName = "Friz Quadrata TT"
@@ -47,7 +44,7 @@ local options = {
             args = {
                 locked = {
                     type = 'toggle',
-                    width = 'full',
+                --    width = 'full',
                     name = L["Locked"],
                     desc = L["Lock/Unlock display frame"],
                     order = 100,
@@ -131,7 +128,7 @@ local options = {
                     desc = L["Color"],
                     set = "setColor",
                     get = "getColor",
-                    order = 190,
+                    order = 101,
                 },
                 strata = {
                     type = 'select',
@@ -215,13 +212,12 @@ local options = {
 
 function CooldownToGo:registerSubOptions(name, opts)
     local appName = self.AppName .. "." .. name
-    AceConfig:RegisterOptionsTable(appName, opts)
+    ACR:RegisterOptionsTable(appName, opts)
     return ACD:AddToBlizOptions(appName, opts.name or name, self.AppName)
 end
 
 function CooldownToGo:setupOptions()
-    self:setupLDB()
-    AceConfig:RegisterOptionsTable(self.AppName, options.args.main)
+    ACR:RegisterOptionsTable(self.AppName, options.args.main)
     self.opts = ACD:AddToBlizOptions(self.AppName, self.AppName)
     self:updateIgnoreListOptions()
     self.ignoreListOpts = self:registerSubOptions('ignoreLists', options.args.ignoreLists)
@@ -229,36 +225,7 @@ function CooldownToGo:setupOptions()
     if LibDualSpec then
         LibDualSpec:EnhanceOptions(profiles, self.db)
     end
-    profiles.order = 900
-    options.args.profiles = profiles
     self.profiles = self:registerSubOptions('profiles', profiles)
-    AceConfig:RegisterOptionsTable(self.AppName .. '.Cmd', options, {"cdtg", self.AppName:lower()})
-end
-
-function CooldownToGo:setupLDB()
-    if not LDB then return end
-    local ldb = {
-        type = "launcher",
-        icon = Icon,
-        OnClick = function(frame, button)
-            if button == "LeftButton" then
-                if IsShiftKeyDown() then
-                    self:ignoreNextAction()
-                else
-                    self:toggleLocked()
-                end
-            elseif button == "RightButton" then
-                self:openConfigDialog()
-            end
-        end,
-        OnTooltipShow = function(tt)
-            tt:AddLine(self.AppName)
-            tt:AddLine(L["|cffeda55fLeft Click|r to lock/unlock frame"])
-            tt:AddLine(L["|cffeda55fShift + Left Click|r to ignore next action"])
-            tt:AddLine(L["|cffeda55fRight Click|r to open the configuration window"])
-        end,
-    }
-    LDB:NewDataObject(self.AppName, ldb)
 end
 
 function CooldownToGo:openConfigDialog()
@@ -345,22 +312,9 @@ function CooldownToGo:updateIgnoreListOptions()
     end
 end
 
-function CooldownToGo:ignoreNextAction()
-    self:Print(L["Next action will be added to ignore list"])
-    self.ignoreNext = true
-end
-
 function CooldownToGo:removeIgnored(info)
     local id = info[#info]
     local cat = info[#info - 1]
     self:setIgnoredState(cat .. ":" .. id, false)
-end
-
-function CooldownToGo:ignoreByLink(info, link)
-    return self:setIgnoredState(link, true)
-end
-
-function CooldownToGo:removeByLink(info, link)
-    return self:setIgnoredState(link, false)
 end
 
