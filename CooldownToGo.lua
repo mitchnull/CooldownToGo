@@ -7,6 +7,7 @@ License: Public Domain
 ]]
 
 local AppName = "CooldownToGo"
+local OptionsAppName = AppName .. "_Options"
 local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
 
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
@@ -97,6 +98,7 @@ local CooldownToGo = CooldownToGo
 CooldownToGo:SetDefaultModuleState(false)
 
 CooldownToGo.AppName = AppName
+CooldownToGo.OptionsAppName = OptionsAppName
 CooldownToGo.version = VERSION
 
 local defaults = {
@@ -344,7 +346,10 @@ function CooldownToGo:OnInitialize()
         self:createFrame()
     end
     self:applySettings()
-    self:setupOptions()
+    self:setupDummyOptions()
+    if self.setupDBOptions then -- trickery to make it work with a straight checkout
+        self:setupDBOptions()
+    end
     self:setupLDB()
 end
 
@@ -685,14 +690,6 @@ function CooldownToGo:ignoreNextAction()
     self.ignoreNext = true
 end
 
-function CooldownToGo:ignoreByLink(link)
-    return self:setIgnoredState(link, true)
-end
-
-function CooldownToGo:removeByLink(link)
-    return self:setIgnoredState(link, false)
-end
-
 function CooldownToGo:printf(fmt, ...)
     fmt = "|cff33ff99" .. AppName .. "|r: " .. fmt
     print(fmt:format(...))
@@ -702,6 +699,48 @@ end
 
 function CooldownToGo:notifyOptionsChange()
 end
+
+-- BEGIN LoD Options muckery
+
+function CooldownToGo:setupDummyOptions()
+    if self.optionsLoaded then
+        return
+    end
+    self.dummyOpts = CreateFrame("Frame", AppName .. "DummyOptions", UIParent)
+    self.dummyOpts.name = AppName
+    self.dummyOpts:SetScript("OnShow", function(frame)
+        if not self.optionsLoaded then
+            if not InterfaceOptionsFrame:IsVisible() then
+                return -- wtf... Happens if you open the game map and close it with ESC
+            end
+            self:openConfigDialog()
+        else
+            frame:Hide()
+        end
+    end)
+    InterfaceOptions_AddCategory(self.dummyOpts)
+end
+
+function CooldownToGo:loadOptions()
+    if not self.optionsLoaded then
+        self.optionsLoaded = true
+        local loaded, reason = LoadAddOn(OptionsAppName)
+        if not loaded then
+            print("Failed to load " .. tostring(OptionsAppName) .. ": " .. tostring(reason))
+        end
+    end
+end
+
+function CooldownToGo:openConfigDialog(opts)
+    -- this function will be overwritten by the Options module when loaded
+    if not self.optionsLoaded then
+        self:loadOptions()
+        return self:openConfigDialog(opts)
+    end
+    InterfaceOptionsFrame_OpenToCategory(self.dummyOpts)
+end
+
+-- END LoD Options muckery
 
 -- register slash command
 
@@ -716,9 +755,9 @@ SlashCmdList["COOLDOWNTOGO"] = function(msg)
     elseif cmd == "ignorenext" then
         CooldownToGo:ignoreNextAction()
     elseif cmd == "ignore" then
-        CooldownToGo:ignoreByLink(param)
+        CooldownToGo:setIgnoredState(param, true)
     elseif cmd == "remove" then
-        CooldownToGo:removeByLink(param)
+        CooldownToGo:setIgnoredState(param, false)
     else
         CooldownToGo:openConfigDialog()
     end
