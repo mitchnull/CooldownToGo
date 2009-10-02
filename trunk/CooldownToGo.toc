@@ -5,7 +5,7 @@
 ## Version: 1.7.0
 ## SavedVariables: CooldownToGoDB
 ## LoadManagers: AddonLoader
-## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, AceGUI-3.0-SharedMediaWidgets, LibDualSpec-1.0
+## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDualSpec-1.0, AceGUI-3.0-SharedMediaWidgets
 ## X-LoadOn-Always: true
 ## X-Category: Combat
 ## X-License: Public Domain
@@ -15,8 +15,6 @@
 embeds.xml
 #@end-no-lib-strip@
 libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
-
 localizations\localizations.xml
-
 CooldownToGo.lua
 Options.lua
