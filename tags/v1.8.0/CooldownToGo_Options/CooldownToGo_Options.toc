@@ -1,0 +1,15 @@
+## Interface: 30200
+## Title: CooldownToGo Options
+## Author: mitch0
+## Version: @project-version@
+## Notes: Configuration options for CooldownToGo
+## OptionalDeps: AceGUI-3.0-SharedMediaWidgets
+## Dependencies: CooldownToGo
+## LoadOnDemand: 1
+## X-License: Public Domain
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+localizations\localizations.xml
+Options.lua
