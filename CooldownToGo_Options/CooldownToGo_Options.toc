@@ -1,4 +1,4 @@
-## Interface: 30200
+## Interface: 30300
 ## Title: CooldownToGo Options
 ## Author: mitch0
 ## Version: @project-version@
