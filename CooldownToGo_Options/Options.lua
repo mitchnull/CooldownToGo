@@ -8,6 +8,7 @@ local LibDualSpec = LibStub("LibDualSpec-1.0", true)
 local MinFontSize = 5
 local MaxFontSize = 240
 local DefaultFontName = "Friz Quadrata TT"
+local Huge = math.huge
 
 local _
 
@@ -47,7 +48,8 @@ local mainOptions = {
             name = L["Hold time"],
             desc = L["Time to hold the message in seconds"],
             min = 0.0,
-            max = 5.0,
+            softMax = 5.0,
+            max = Huge,
             step = 0.5,
             order = 120,
         },
@@ -56,7 +58,8 @@ local mainOptions = {
             name = L["Fade time"],
             desc = L["Fade time of the message in seconds"],
             min = 0.0,
-            max = 5.0,
+            softMax = 5.0,
+            max = Huge,
             step = 0.5,
             order = 125,
         },
@@ -65,7 +68,8 @@ local mainOptions = {
             name = L["Ready time"],
             desc = L["Show the cooldown again this many seconds before the cooldown expires"],
             min = 0.0,
-            max = 1.0,
+            softMax = 1.0,
+            max = Huge,
             step = 0.1,
             order = 130,
         },
@@ -74,7 +78,8 @@ local mainOptions = {
             name = L["Grace Period"],
             desc = L["Delay before cooldown display is activated (useful for button-smashers)"],
             min = 0.0,
-            max = 1.0,
+            softMax = 1.0,
+            max = Huge,
             step = 0.05,
             order = 131,
         },
@@ -103,7 +108,8 @@ local mainOptions = {
             name = L["Font size"],
             desc = L["Font size"],
             min = MinFontSize,
-            max = MaxFontSize,
+            softMax = MaxFontSize,
+            max = Huge,
             step = 1,
             order = 140,
         },
