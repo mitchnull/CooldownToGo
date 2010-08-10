@@ -351,6 +351,13 @@ function CooldownToGo:OnInitialize()
         self:setupDBOptions()
     end
     self:setupLDB()
+    if not self.db.profile.locked then
+        self:RegisterEvent("PLAYER_REGEN_DISABLED", function()
+            if not self.db.profile.locked then
+                self:toggleLocked(true)
+            end
+        end)
+    end
 end
 
 function CooldownToGo:OnEnable(first)
