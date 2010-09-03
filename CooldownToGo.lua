@@ -28,7 +28,7 @@ local GetActionInfo = GetActionInfo
 local GetPetActionCooldown = GetPetActionCooldown
 local GetPetActionInfo = GetPetActionInfo
 
-local GetSpellName = GetSpellName
+local GetSpellName = GetSpellName or GetSpellBookItemName
 local GetSpellLink = GetSpellLink
 local GetSpellInfo = GetSpellInfo
 local GetSpellCooldown = GetSpellCooldown
