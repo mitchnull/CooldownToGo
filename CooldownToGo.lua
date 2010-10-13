@@ -51,7 +51,7 @@ local Height = 30
 local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
 local DefaultSoundName = "Pong"
-local DefaultSoundFile = [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.wav]]
+local DefaultSoundFile = [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.ogg]]
 local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
 
 --[[
@@ -327,11 +327,11 @@ function CooldownToGo:OnInitialize()
         -- The original sound samples are made by pera and acclivity of freesound.org,
         -- I just tailored them a bit. Thanks pera and acclivity!
         LSM:Register("sound", "Pong",
-            [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.wav]])
+            [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.ogg]])
         LSM:Register("sound", "BeepBeepBeep",
-            [[Interface\AddOns\]] .. AppName .. [[\sounds\3beeps.wav]])
+            [[Interface\AddOns\]] .. AppName .. [[\sounds\3beeps.ogg]])
         LSM:Register("sound", "DooDaDee",
-            [[Interface\AddOns\]] .. AppName .. [[\sounds\doodadee.wav]])
+            [[Interface\AddOns\]] .. AppName .. [[\sounds\doodadee.ogg]])
     end
     self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
     if LibDualSpec then
