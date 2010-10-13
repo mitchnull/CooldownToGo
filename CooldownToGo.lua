@@ -28,7 +28,7 @@ local GetActionInfo = GetActionInfo
 local GetPetActionCooldown = GetPetActionCooldown
 local GetPetActionInfo = GetPetActionInfo
 
-local GetSpellName = GetSpellName or GetSpellBookItemName
+local GetSpellBookItemName = GetSpellBookItemName
 local GetSpellLink = GetSpellLink
 local GetSpellInfo = GetSpellInfo
 local GetSpellCooldown = GetSpellCooldown
@@ -506,7 +506,7 @@ function CooldownToGo:checkActionCooldown(slot)
     local type, id, subtype = GetActionInfo(slot)
     -- printf("### action: %s, type=%s, id=%s, subtype=%s", tostring(slot), tostring(type), tostring(id), tostring(subtype))
     if type == 'spell' then
-        self:checkSpellCooldownByIdx(id, subtype)
+        self:checkSpellCooldown(id)
     elseif type == 'item' then
         self:checkItemCooldown(id)
     end
@@ -515,7 +515,7 @@ end
 function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
     -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
     if spellIdx == 0 then return end -- mounts?
-    local spell = GetSpellName(spellIdx, bookType)
+    local spell = GetSpellBookItemName(spellIdx, bookType)
     self:checkSpellCooldown(spell)
 end
 
