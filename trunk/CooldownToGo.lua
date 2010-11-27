@@ -343,9 +343,6 @@ function CooldownToGo:OnInitialize()
 end
 
 function CooldownToGo:OnEnable(first)
---    self:SecureHook("CastSpell", "checkSpellCooldownByIdx")
---    self:SecureHook("CastSpellByName", "checkSpellCooldown")
---    self:SecureHook("CastSpellByID", "checkSpellCooldown")
     self:SecureHook("UseAction", "checkActionCooldown")
     self:SecureHook("UseContainerItem", "checkContainerItemCooldown")
     self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
@@ -493,13 +490,6 @@ function CooldownToGo:checkActionCooldown(slot)
     elseif type == 'item' then
         self:checkItemCooldown(id)
     end
-end
-
-function CooldownToGo:checkSpellCooldownByIdx(spellIdx, bookType)
-    -- printf("### spellIdx: %s, book: %s", tostring(spellIdx), tostring(bookType))
-    if spellIdx == 0 then return end -- mounts?
-    local spell = GetSpellBookItemName(spellIdx, bookType)
-    self:checkSpellCooldown(spell)
 end
 
 function CooldownToGo:checkSpellCooldown(spell)
