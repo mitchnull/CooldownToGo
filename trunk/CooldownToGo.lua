@@ -361,8 +361,9 @@ function CooldownToGo:OnInitialize()
 end
 
 function CooldownToGo:OnEnable(first)
-    self:SecureHook("CastSpell", "checkSpellCooldownByIdx")
-    self:SecureHook("CastSpellByName", "checkSpellCooldown")
+--    self:SecureHook("CastSpell", "checkSpellCooldownByIdx")
+--    self:SecureHook("CastSpellByName", "checkSpellCooldown")
+--    self:SecureHook("CastSpellByID", "checkSpellCooldown")
     self:SecureHook("UseAction", "checkActionCooldown")
     self:SecureHook("UseContainerItem", "checkContainerItemCooldown")
     self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
@@ -372,6 +373,7 @@ function CooldownToGo:OnEnable(first)
     self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("BAG_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("PET_BAR_UPDATE_COOLDOWN", "updateCooldown")
+    self:RegisterEvent("UNIT_SPELLCAST_FAILED");
 end
 
 function CooldownToGo:OnDisable()
@@ -546,7 +548,7 @@ function CooldownToGo:checkSpellCooldown(spell)
         self:setIgnoredState(link, true)
         return
     end
-    self:showCooldown(texture, GetSpellCooldown, name)
+    self:showCooldown(texture, GetSpellCooldown, spell)
 end
 
 function CooldownToGo:checkInventoryItemCooldown(invSlot)
@@ -585,6 +587,13 @@ function CooldownToGo:checkPetActionCooldown(index)
         return
     end
     self:showCooldown(texture, GetPetActionCooldown, index)
+end
+
+function CooldownToGo:UNIT_SPELLCAST_FAILED(event, unit, name, rank, seq, id)
+    -- print("### unit: " .. tostring(unit) .. ", name: " .. tostring(name) .. ", rank: " .. tostring(rank) .. ", seq: " .. tostring(seq) .. ", id: " .. tostring(id))
+    if unit == 'player' or unit == 'pet' then
+        self:checkSpellCooldown(id)
+    end
 end
 
 function CooldownToGo:updateCooldown(event)
