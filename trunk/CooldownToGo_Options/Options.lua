@@ -233,11 +233,11 @@ local function updateOpts(opts, db, descFunc)
 end
 
 local function getSpellDesc(id)
-    return GetSpellInfo(id)
+    return GetSpellInfo(id) or "spell:" .. id
 end
 
 local function getItemDesc(id)
-    return GetItemInfo(id)
+    return GetItemInfo(id) or "item:" .. id
 end
 
 function CooldownToGo:updateIgnoreListOptions()
