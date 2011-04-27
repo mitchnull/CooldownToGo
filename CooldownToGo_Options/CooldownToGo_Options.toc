@@ -1,4 +1,4 @@
-## Interface: 40000
+## Interface: 40100
 ## Title: CooldownToGo Options
 ## Author: mitch0
 ## Version: @project-version@

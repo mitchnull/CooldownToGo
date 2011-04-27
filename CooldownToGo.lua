@@ -329,9 +329,6 @@ function CooldownToGo:OnInitialize()
     end
     self:applySettings()
     self:setupDummyOptions()
-    if self.setupDBOptions then -- trickery to make it work with a straight checkout
-        self:setupDBOptions()
-    end
     self:setupLDB()
     if not self.db.profile.locked then
         self:RegisterEvent("PLAYER_REGEN_DISABLED", function()

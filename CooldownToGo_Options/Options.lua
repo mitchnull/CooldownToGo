@@ -281,16 +281,10 @@ do
     ACR:RegisterOptionsTable(self.AppName, mainOptions)
     self.opts = ACD:AddToBlizOptions(self.AppName, self.AppName)
     self.ignoreListOpts = registerSubOptions('ignoreLists', ignoreLists)
-    self.setupDBOptions = function(self)
-        self:updateIgnoreListOptions()
-        local profiles =  AceDBOptions:GetOptionsTable(self.db)
-        if LibDualSpec then
-            LibDualSpec:EnhanceOptions(profiles, self.db)
-        end
-        self.profiles = registerSubOptions('profiles', profiles)
+    self:updateIgnoreListOptions()
+    local profiles =  AceDBOptions:GetOptionsTable(self.db)
+    if LibDualSpec then
+        LibDualSpec:EnhanceOptions(profiles, self.db)
     end
-    if self.db then -- trickery to make it work with a straight checkout
-        self:setupDBOptions()
-        self.setupDBOptions = nil
-    end
+    self.profiles = registerSubOptions('profiles', profiles)
 end
