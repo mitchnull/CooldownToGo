@@ -25,6 +25,9 @@ local GetTime = GetTime
 
 local GetActionInfo = GetActionInfo
 
+local GetPetActionCooldown = GetPetActionCooldown
+local GetPetActionInfo = GetPetActionInfo
+
 local GetSpellBookItemName = GetSpellBookItemName
 local GetSpellLink = GetSpellLink
 local GetSpellInfo = GetSpellInfo
@@ -113,6 +116,7 @@ local defaults = {
         ignoreLists = {
             spell = {},
             item = {},
+            petbar = {},
         },
         warnSound = true,
         warnSoundName = DefaultSoundName,
@@ -132,6 +136,12 @@ end
 local function spellIdFromLink(link)
     if not link then return nil end
     local id = link:match("spell:(%d+)")
+    return tonumber(id)
+end
+
+local function petActionIndexFromLink(link)
+    if not link then return nil end
+    local id = link:match("petbar:(%d+)")
     return tonumber(id)
 end
 
@@ -344,6 +354,8 @@ function CooldownToGo:OnEnable(first)
     self:SecureHook("UseContainerItem", "checkContainerItemCooldown")
     self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
     self:SecureHook("UseItemByName", "checkItemCooldown")
+    self:SecureHook("CastSpellByName", "checkSpellCooldown") -- only needed for pet spells
+    self:SecureHook("CastPetAction", "checkPetActionCooldown")
     self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("BAG_UPDATE_COOLDOWN", "updateCooldown")
@@ -489,10 +501,26 @@ function CooldownToGo:checkActionCooldown(slot)
     end
 end
 
+local function findPetActionIndexForSpell(spell)
+    if not spell then return end
+    -- printf("### findPetActionIndexForSpell(%s)", tostring(spell))
+    for i = 1, NUM_PET_ACTION_SLOTS do
+        local name, sub, _, isToken = GetPetActionInfo(i)
+        if isToken then name = _G[name] end
+        -- printf("### %s: name: %s, sub: %s, isToken: %s", tostring(i), tostring(name), tostring(sub), tostring(isToken))
+        if name == spell then
+            return i
+        end
+    end
+end
+
 function CooldownToGo:checkSpellCooldown(spell)
     -- print("### spell: " .. tostring(spell))
     if not spell then return end
     local name, _, texture = GetSpellInfo(spell)
+    if not name then
+         return self:checkPetActionCooldown(findPetActionIndexForSpell(spell))
+    end
     if ignoredSpells[name] then return end
     if self.ignoreNext then
         self.ignoreNext = nil
@@ -528,6 +556,18 @@ function CooldownToGo:checkItemCooldown(item)
         return
     end
     self:showCooldown(texture, GetItemCooldown, itemId)
+end
+
+function CooldownToGo:checkPetActionCooldown(index)
+    -- print("### checkPetActionCooldown: " .. tostring(index))
+    if not index or db.ignoreLists.petbar[index] then return end
+    if self.ignoreNext then
+        self.ignoreNext = nil
+        self:setIgnoredState('petbar:' .. tostring(index), true)
+        return
+    end
+    local _, _, texture = GetPetActionInfo(index)
+    self:showCooldown(texture, GetPetActionCooldown, index)
 end
 
 function CooldownToGo:UNIT_SPELLCAST_FAILED(event, unit, name, rank, seq, id)
@@ -598,6 +638,18 @@ function CooldownToGo:setIgnoredState(link, flag)
         db.ignoreLists.item[id] = flag
         _, link = GetItemInfo(id) -- to make notify() nicer in case we got only a pseudo-link (just "item:id")
         self:notifyIgnoredChange(link, flag)
+    elseif petActionIndexFromLink(link) then
+        local id = petActionIndexFromLink(link)
+        if not id then return end
+        db.ignoreLists.petbar[id] = flag
+        local text, _, _, isToken = GetPetActionInfo(id)
+        text = isToken and _G[text] or text
+        if text then
+             text = text .. '[' .. tostring(id) .. ']'
+        else
+             text = 'petbar:' .. tostring(id)
+        end
+        self:notifyIgnoredChange(text, flag)
     end
 end
 

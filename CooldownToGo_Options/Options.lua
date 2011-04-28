@@ -169,6 +169,14 @@ local ignoreLists = {
             order = 130,
             args = {},
         },
+        petbar = {
+            type = 'group',
+            inline = true,
+            name = L["Petbar"],
+            cmdHidden = true,
+            order = 140,
+            args = {},
+        },
     },
 }
 
@@ -240,10 +248,17 @@ local function getItemDesc(id)
     return GetItemInfo(id) or "item:" .. id
 end
 
+local function getPetbarDesc(id)
+    local text, _, _, isToken = GetPetActionInfo(id)
+    text = ((isToken and _G[text] or text) or L['Petbar']) .. '[' .. tostring(id) .. ']'
+    return text
+end
+
 function CooldownToGo:updateIgnoreListOptions()
     local changed
     changed = updateOpts(ignoreLists.args.spell.args, self.db.profile.ignoreLists.spell, getSpellDesc) or changed
     changed = updateOpts(ignoreLists.args.item.args, self.db.profile.ignoreLists.item, getItemDesc) or changed
+    changed = updateOpts(ignoreLists.args.petbar.args, self.db.profile.ignoreLists.petbar, getPetbarDesc) or changed
     if changed then
         self:notifyOptionsChange() 
     end
