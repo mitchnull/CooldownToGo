@@ -569,7 +569,9 @@ function CooldownToGo:notifyIgnoredChange(text, flag)
     else
         self:printf(L["removed %s from ignore list"], text)
     end
-    self:updateIgnoreListOptions()
+    if self.updateIgnoreListOptions then
+        self:updateIgnoreListOptions()
+    end
 end
 
 function CooldownToGo:setIgnoredState(link, flag)
