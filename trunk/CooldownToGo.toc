@@ -1,4 +1,4 @@
-## Interface: 40200
+## Interface: 40300
 ## Title: CooldownToGo
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
