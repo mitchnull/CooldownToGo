@@ -364,6 +364,7 @@ function CooldownToGo:OnEnable(first)
     self:RegisterEvent("BAG_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("PET_BAR_UPDATE_COOLDOWN", "updateCooldown")
     self:RegisterEvent("UNIT_SPELLCAST_FAILED") -- FIXME: RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player", "pet")
+    self:applySettings()
 end
 
 function CooldownToGo:OnDisable()
