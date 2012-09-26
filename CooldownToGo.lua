@@ -35,6 +35,7 @@ local GetSpellBookItemName = GetSpellBookItemName
 local GetSpellLink = GetSpellLink
 local GetSpellInfo = GetSpellInfo
 local GetSpellCooldown = GetSpellCooldown
+local GetSpellBaseCooldown = GetSpellBaseCooldown
 
 local GetInventoryItemLink = GetInventoryItemLink 
 local GetContainerItemLink = GetContainerItemLink
@@ -400,6 +401,7 @@ function CooldownToGo:OnUpdate(elapsed)
         isActive = false
         self.text:SetText(nil)
         self.icon:SetTexture(nil)
+        self:updateCooldown() -- check lastGetCooldown, lastArg
         return
     end
     if now >= endStamp then
@@ -474,12 +476,12 @@ function CooldownToGo:updateStamps(start, duration, show, startHidden)
     end
 end
 
-function CooldownToGo:showCooldown(texture, getCooldownFunc, arg)
+function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, hasCooldown)
     -- printf("### showCooldown: texture: %s, arg: %s", texture, arg)
     local start, duration, enabled = getCooldownFunc(arg)
     -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
     if not start or enabled ~= 1 or duration <= GCD then
-        if not isActive then
+        if hasCooldown and (isReady or not isActive) then
             lastTexture, lastGetCooldown, lastArg = texture, getCooldownFunc, arg
         end
         return
@@ -532,7 +534,8 @@ function CooldownToGo:checkSpellCooldown(spell)
         self:setIgnoredState(link, true)
         return
     end
-    self:showCooldown(texture, GetSpellCooldown, spell)
+    local baseCooldown = GetSpellBaseCooldown(spell)
+    self:showCooldown(texture, GetSpellCooldown, spell, (baseCooldown and baseCooldown > 0))
 end
 
 function CooldownToGo:checkInventoryItemCooldown(invSlot)
@@ -570,8 +573,12 @@ function CooldownToGo:checkPetActionCooldown(index)
         self:setIgnoredState('petbar:' .. tostring(index), true)
         return
     end
-    local _, _, texture = GetPetActionInfo(index)
-    self:showCooldown(texture, GetPetActionCooldown, index)
+    local _, _, texture, _, _, _, _, spellId = GetPetActionInfo(index)
+    if spellId then
+        self:checkSpellCooldown(spellId)
+    else
+        self:showCooldown(texture, GetPetActionCooldown, index)
+    end
 end
 
 function CooldownToGo:UNIT_SPELLCAST_FAILED(event, unit, name, rank, seq, id)
