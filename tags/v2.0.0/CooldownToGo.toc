@@ -1,0 +1,22 @@
+## Interface: 50001
+## Title: CooldownToGo
+## Notes: Displays the remaing cooldown of the action you tried to use
+## Author: mitch0
+## Version: @project-version@
+## SavedVariables: CooldownToGoDB
+## LoadManagers: AddonLoader
+## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDualSpec-1.0 Masque
+#@do-not-package@
+## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDualSpec-1.0, AceGUI-3.0-SharedMediaWidgets
+#@end-do-not-package@
+## X-LoadOn-Always: true
+## X-Category: Combat
+## X-License: Public Domain
+## X-RelSite-WoWI: 8601
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+localizations\localizations.xml
+CooldownToGo.lua
