@@ -5,7 +5,7 @@
 ## Version: @project-version@
 ## SavedVariables: CooldownToGoDB
 ## LoadManagers: AddonLoader
-## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDualSpec-1.0
+## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDualSpec-1.0 Masque
 #@do-not-package@
 ## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibSharedMedia-3.0, LibDualSpec-1.0, AceGUI-3.0-SharedMediaWidgets
 #@end-do-not-package@
