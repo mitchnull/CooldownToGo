@@ -17,6 +17,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local LSM = LibStub:GetLibrary("LibSharedMedia-3.0", true)
 local LDB = LibStub:GetLibrary("LibDataBroker-1.1")
 local LibDualSpec = LibStub("LibDualSpec-1.0", true)
+local Masque = LibStub("Masque", true)
 
 -- cache
 
@@ -190,10 +191,21 @@ function CooldownToGo:createFrame()
     text:SetText("cdtg")
     self.text = text
 
-    local icon = frame:CreateTexture("CDTGIcon", "OVERLAY")
-    icon:SetTexture(Icon)
-    icon:SetPoint("RIGHT", frame, "CENTER", -2, 0)
-    self.icon = icon
+    if Masque then
+        local icon =  CreateFrame("Button", "CDTGButton", frame)
+        icon:EnableMouse(false)
+        local iconTexture = icon:CreateTexture("CDTGIcon", "OVERLAY")
+        self.masqueGroup = Masque:Group(AppName)
+        self.masqueGroup:AddButton(icon, { Icon = iconTexture })
+        self.icon = icon
+        self.iconTexture = iconTexture
+    else
+        local icon = frame:CreateTexture("CDTGIcon", "OVERLAY")
+        self.icon = icon
+        self.iconTexture = icon
+    end
+    self.icon:SetPoint("RIGHT", frame, "CENTER", -2, 0)
+    self.iconTexture:SetTexture(Icon)
 
     frame:SetScript("OnMouseDown", function(frame, button)
         if button == "LeftButton" then
@@ -289,6 +301,9 @@ function CooldownToGo:applySettings()
         self.soundFile = DefaultSoundFile
     end
     self:applyFontSettings()
+    if self.masqueGroup then
+        self.masqueGroup:ReSkin()
+    end
 end
 
 function CooldownToGo:lock()
@@ -400,7 +415,7 @@ function CooldownToGo:OnUpdate(elapsed)
         end
         isActive = false
         self.text:SetText(nil)
-        self.icon:SetTexture(nil)
+        self.iconTexture:SetTexture(nil)
         self:updateCooldown() -- check lastGetCooldown, lastArg
         return
     end
@@ -493,7 +508,7 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, hasCooldown)
     isActive = true
     isReady = false
     isAlmostReady = false
-    self.icon:SetTexture(texture)
+    self.iconTexture:SetTexture(texture)
     self:updateStamps(start, duration, true)
 end
 
@@ -601,7 +616,7 @@ function CooldownToGo:updateCooldown(event)
             isActive = true
             isReady = false
             isAlmostReady = false
-            self.icon:SetTexture(lastTexture)
+            self.iconTexture:SetTexture(lastTexture)
             self:updateStamps(start, duration, true, true)
             self.frame:SetAlpha(0)
         end
