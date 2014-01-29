@@ -737,6 +737,7 @@ function CooldownToGo:setupDummyOptions()
         return
     end
     self.dummyOpts = CreateFrame("Frame", AppName .. "DummyOptions", UIParent)
+    self.dummyOpts:Hide()
     self.dummyOpts.name = AppName
     self.dummyOpts:SetScript("OnShow", function(frame)
         if not self.optionsLoaded then
@@ -765,6 +766,7 @@ function CooldownToGo:openConfigDialog(opts)
     -- this function will be overwritten by the Options module when loaded
     if not self.optionsLoaded then
         self:loadOptions()
+        InterfaceAddOnsList_Update()
         return self:openConfigDialog(opts)
     end
     InterfaceOptionsFrame_OpenToCategory(self.dummyOpts)
