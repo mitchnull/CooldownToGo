@@ -123,6 +123,7 @@ local defaults = {
             item = {},
             petbar = {},
         },
+        reverseIgnoreLogic = false,
         warnSound = true,
         warnSoundName = DefaultSoundName,
     },
@@ -542,12 +543,16 @@ function CooldownToGo:checkSpellCooldown(spell)
     if not name then
          return self:checkPetActionCooldown(findPetActionIndexForSpell(spell))
     end
-    if ignoredSpells[name] then return end
     if self.ignoreNext then
         self.ignoreNext = nil
         local link = GetSpellLink(spell)
         self:setIgnoredState(link, true)
         return
+    end
+    if db.reverseIgnoreLogic then
+        if not ignoredSpells[name] then return end
+    else
+        if ignoredSpells[name] then return end
     end
     local baseCooldown = GetSpellBaseCooldown(spell)
     self:showCooldown(texture, GetSpellCooldown, spell, (baseCooldown and baseCooldown > 0))
@@ -571,22 +576,31 @@ function CooldownToGo:checkItemCooldown(item)
     local _, itemLink, _, _, _, _, _, _, _, texture = GetItemInfo(item)
     local itemId = itemIdFromLink(itemLink)
     if not itemId then return end
-    if db.ignoreLists.item[itemId] then return end
     if self.ignoreNext then
         self.ignoreNext = nil
         self:setIgnoredState(itemLink, true)
         return
+    end
+    if db.reverseIgnoreLogic then
+        if not db.ignoreLists.item[itemId] then return end
+    else
+        if db.ignoreLists.item[itemId] then return end
     end
     self:showCooldown(texture, GetItemCooldown, itemId)
 end
 
 function CooldownToGo:checkPetActionCooldown(index)
     -- print("### checkPetActionCooldown: " .. tostring(index))
-    if not index or db.ignoreLists.petbar[index] then return end
+    if not index then return end
     if self.ignoreNext then
         self.ignoreNext = nil
         self:setIgnoredState('petbar:' .. tostring(index), true)
         return
+    end
+    if db.reverseIgnoreLogic then
+        if not db.ignoreLists.petbar[index] then return end
+    else
+        if db.ignoreLists.petbar[index] then return end
     end
     local _, _, texture, _, _, _, _, spellId = GetPetActionInfo(index)
     if spellId then

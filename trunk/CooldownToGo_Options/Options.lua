@@ -145,6 +145,8 @@ local ignoreLists = {
     inline = true,
     name = L["Ignore list"],
     handler = CooldownToGo,
+    get = "getOption",
+    set = "setOption",
     order = 50,
     args = {
         ignoreNext = {
@@ -152,6 +154,12 @@ local ignoreLists = {
             name = L["Ignore next action"],
             order = 10,
             func = "ignoreNextAction",
+        },
+        reverseIgnoreLogic = {
+            type = 'toggle',
+            name = L["Reverse Ignore Logic"],
+            desc = L["If checked, then only trigger for actions that are on the ignore list, and ignore the others."],
+            order = 15,
         },
         spell = {
             type = 'group',
