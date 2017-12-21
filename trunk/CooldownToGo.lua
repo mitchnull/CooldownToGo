@@ -106,6 +106,9 @@ local defaults = {
         readyTime = 0.5,
         font = DefaultFontName,
         fontSize = 24,
+        iconSize = 24,
+        padding = 2,
+        textPosition = "RIGHT",
         fontOutline = "",
         locked = false,
         point = "CENTER",
@@ -128,6 +131,31 @@ local defaults = {
         warnSoundName = DefaultSoundName,
     },
 }
+
+local Opposite = {
+    ["LEFT"] = "RIGHT",
+    ["RIGHT"] = "LEFT",
+    ["TOP"] = "BOTTOM",
+    ["BOTTOM"] = "TOP",
+}
+
+local function textOffsetXY(padding, textPosition)
+    if textPosition == "LEFT" then
+        return padding / 2, 0
+    elseif textPosition == "RIGHT" then
+        return -padding / 2, 0
+    elseif textPosition == "TOP" then
+        return 0, -padding / 2 
+    elseif textPosition == "BOTTOM" then
+        return 0, padding / 2
+    end
+    return 0, 0 -- just in case
+end
+
+local function iconOffsetXY(padding, textPosition)
+    local tx, ty = textOffsetXY(padding, textPosition)
+    return -tx, -ty
+end
 
 local function printf(fmt, ...)
     return print(fmt:format(...))
@@ -163,6 +191,23 @@ local function updateIgnoredSpells(ids)
     end
 end
 
+function CooldownToGo:updateLayout()
+    if db.textPosition == "LEFT" then
+        self.text:SetJustifyH("RIGHT")
+    elseif db.textPosition == "RIGHT" then
+        self.text:SetJustifyH("LEFT")
+    else
+        self.text:SetJustifyH("CENTER")
+    end
+    self.text:ClearAllPoints()
+    self.text:SetPoint(Opposite[db.textPosition], self.frame, "CENTER", textOffsetXY(db.padding, db.textPosition))
+
+    self.icon:ClearAllPoints()
+    self.icon:SetPoint(db.textPosition, self.frame, "CENTER", iconOffsetXY(db.padding, db.textPosition))
+    self.icon:SetHeight(db.iconSize)
+    self.icon:SetWidth(db.iconSize)
+end
+
 function CooldownToGo:createFrame()
     self.isMoving = false
     local frame = CreateFrame("MessageFrame", "CooldownToGoFrame", UIParent)
@@ -187,8 +232,6 @@ function CooldownToGo:createFrame()
 
     local text = frame:CreateFontString("CDTGText", "OVERLAY", "GameFontNormal")
     text:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
-    text:SetJustifyH("LEFT")
-    text:SetPoint("LEFT", frame, "CENTER", 0, 0)
     text:SetText("cdtg")
     self.text = text
 
@@ -205,8 +248,9 @@ function CooldownToGo:createFrame()
         self.icon = icon
         self.iconTexture = icon
     end
-    self.icon:SetPoint("RIGHT", frame, "CENTER", -2, 0)
     self.iconTexture:SetTexture(Icon)
+
+    self:updateLayout()
 
     frame:SetScript("OnMouseDown", function(frame, button)
         if button == "LeftButton" then
@@ -276,8 +320,6 @@ function CooldownToGo:applyFontSettings()
     if dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline then
         self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
     end
-    self.icon:SetHeight(db.fontSize)
-    self.icon:SetWidth(db.fontSize)
 end
 
 function CooldownToGo:applySettings()
@@ -305,6 +347,7 @@ function CooldownToGo:applySettings()
     if self.masqueGroup then
         self.masqueGroup:ReSkin()
     end
+    self:updateLayout()
 end
 
 function CooldownToGo:lock()
