@@ -7,6 +7,9 @@ local LibDualSpec = LibStub("LibDualSpec-1.0", true)
 
 local MinFontSize = 5
 local MaxFontSize = 240
+local MinIconSize = MinFontSize
+local MaxIconSize = MaxFontSize
+local MaxPadding = 50
 local DefaultFontName = "Friz Quadrata TT"
 local Huge = math.huge
 
@@ -24,6 +27,13 @@ local FrameStratas = {
     ["HIGH"] = L["High"],
     ["MEDIUM"] = L["Medium"],
     ["LOW"] = L["Low"],
+}
+
+local TextPositions = {
+    ["LEFT"] = L["Left"],
+    ["RIGHT"] = L["Right"],
+    ["TOP"] = L["Top"],
+    ["BOTTOM"] = L["Bottom"],
 }
 
 local mainOptions = {
@@ -112,6 +122,33 @@ local mainOptions = {
             max = Huge,
             step = 1,
             order = 140,
+        },
+        iconSize = {
+            type = 'range',
+            name = L["Icon size"],
+            desc = L["Icon size"],
+            min = MinIconSize,
+            softMax = MaxIconSize,
+            max = Huge,
+            step = 1,
+            order = 142,
+        },
+        textPosition = {
+            type = 'select',
+            name = L["Text position"],
+            desc = L["Text position"],
+            values = TextPositions,
+            order = 144,
+        },
+        padding = {
+            type = 'range',
+            name = L["Padding"],
+            desc = L["Padding"],
+            min = 0,
+            softMax = MaxPadding,
+            max = Huge,
+            step = 1,
+            order = 146,
         },
         fontOutline = {
             type = 'select',
