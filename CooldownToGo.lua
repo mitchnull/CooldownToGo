@@ -141,13 +141,13 @@ local Opposite = {
 
 local function textOffsetXY(padding, textPosition)
     if textPosition == "LEFT" then
-        return padding / 2, 0
-    elseif textPosition == "RIGHT" then
         return -padding / 2, 0
+    elseif textPosition == "RIGHT" then
+        return padding / 2, 0
     elseif textPosition == "TOP" then
-        return 0, -padding / 2 
+        return 0, padding / 2 
     elseif textPosition == "BOTTOM" then
-        return 0, padding / 2
+        return 0, -padding / 2
     end
     return 0, 0 -- just in case
 end
