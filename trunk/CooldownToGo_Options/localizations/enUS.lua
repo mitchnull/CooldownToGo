@@ -2,6 +2,7 @@
 -- This is the base locale; values can be "true" so they default to their key, or any string to override that behaviour.
 local L = LibStub("AceLocale-3.0"):NewLocale("CooldownToGo_Options", "enUS", true)
 
+
 L["Bottom"] = "Bottom"
 L["Color"] = "Color"
 L["Delay before cooldown display is activated (useful for button-smashers)"] = "Delay before cooldown display is activated (useful for button-smashers)"
@@ -15,13 +16,13 @@ L["Grace Period"] = "Grace Period"
 L["High"] = "High"
 L["Hold time"] = "Hold time"
 L["Icon size"] = "Icon size"
-L["If checked, then only trigger for actions that are on the ignore list, and ignore the others."] ="If checked, then only trigger for actions that are on the ignore list, and ignore the others."
+L["If checked, then only trigger for actions that are on the ignore list, and ignore the others."] = "If checked, then only trigger for actions that are on the ignore list, and ignore the others."
 L["Ignore list"] = "Ignore list"
 L["Ignore next action"] = "Ignore next action"
 L["Items"] = "Items"
 L["Left"] = "Left"
-L["Locked"] = "Locked"
 L["Lock/Unlock display frame"] = "Lock/Unlock display frame"
+L["Locked"] = "Locked"
 L["Low"] = "Low"
 L["Medium"] = "Medium"
 L["None"] = "None"
