@@ -9,10 +9,11 @@ local MinFontSize = 5
 local MaxFontSize = 240
 local MinIconSize = MinFontSize
 local MaxIconSize = MaxFontSize
-local MinPadding = -50
-local MaxPadding = 50
+local MinPadding = -100
+local MaxPadding = 100
 local DefaultFontName = "Friz Quadrata TT"
 local Huge = math.huge
+local SemiHuge = Huge / 4;
 
 local _
 
@@ -120,7 +121,7 @@ local mainOptions = {
             desc = L["Font size"],
             min = MinFontSize,
             softMax = MaxFontSize,
-            max = Huge,
+            max = SemiHuge,
             step = 1,
             order = 140,
         },
@@ -128,9 +129,9 @@ local mainOptions = {
             type = 'range',
             name = L["Icon size"],
             desc = L["Icon size"],
-            min = MinIconSize,
+            min = -SemiHuge,
             softMax = MaxIconSize,
-            max = Huge,
+            max = SemiHuge,
             step = 1,
             order = 142,
         },
