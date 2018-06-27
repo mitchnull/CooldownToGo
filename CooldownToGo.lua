@@ -224,7 +224,7 @@ function CooldownToGo:createFrame()
     self.frame = frame
 
     local frameBG = frame:CreateTexture("CDTGFrameBG", "BACKGROUND")
-    frameBG:SetTexture(0, 0.42, 0, 0.42)
+    frameBG:SetColorTexture(0, 0.42, 0, 0.42)
     frameBG:SetWidth(frame:GetWidth())
     frameBG:SetHeight(frame:GetHeight())
     frameBG:SetPoint("CENTER", frame, "CENTER", 0, 0)
