@@ -129,6 +129,7 @@ local defaults = {
         reverseIgnoreLogic = false,
         warnSound = true,
         warnSoundName = DefaultSoundName,
+        suppressReadyNotif = false,
     },
 }
 
@@ -466,18 +467,22 @@ function CooldownToGo:OnUpdate(elapsed)
     if now >= endStamp then
         if not isReady then
             isReady = true
-            self.text:SetText(L["Ready"])
-            self:updateStamps(currStart, currDuration, true)
+            if not db.suppressReadyNotif then
+                self.text:SetText(L["Ready"])
+                self:updateStamps(currStart, currDuration, true)
+            end
         end
     else
         local cd = endStamp - now
         if cd <= db.readyTime and not isAlmostReady then
-            self:updateStamps(currStart, currDuration, true)
-            if db.warnSound and (now - soundPlayedAt) > db.readyTime then
-                PlaySoundFile(self.soundFile)
-                soundPlayedAt = now
-            end
             isAlmostReady = true
+            if not db.suppressReadyNotif then
+                self:updateStamps(currStart, currDuration, true)
+                if db.warnSound and (now - soundPlayedAt) > db.readyTime then
+                    PlaySoundFile(self.soundFile)
+                    soundPlayedAt = now
+                end
+            end
         end
         if cd > 90 then
             self.text:SetFormattedText("%2d:%02d", cd / 60, cd % 60)
@@ -517,7 +522,11 @@ function CooldownToGo:updateStamps(start, duration, show, startHidden)
     else
         fadeStamp = now + db.holdTime
     end
-    finishStamp = endStamp + db.fadeTime
+    if db.suppressReadyNotif then
+        finishStamp = endStamp
+    else
+        finishStamp = endStamp + db.fadeTime
+    end
     hideStamp = fadeStamp + db.fadeTime
 
     lastUpdate = NormalUpdateDelay -- to force update in next frame
