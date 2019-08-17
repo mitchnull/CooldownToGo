@@ -75,6 +75,13 @@ local mainOptions = {
             step = 0.5,
             order = 125,
         },
+        suppressReadyNotif = {
+            type = 'toggle',
+        --    width = 'full',
+            name = L["Suppress Ready Notification"],
+            desc = L["Disable showing the cooldown near the expiry time without user action"],
+            order = 127,
+        },
         readyTime = {
             type = 'range',
             name = L["Ready time"],
@@ -83,6 +90,7 @@ local mainOptions = {
             softMax = 1.0,
             max = Huge,
             step = 0.1,
+            disabled = function() return CooldownToGo.db.profile.suppressReadyNotif end,
             order = 130,
         },
         gracePeriod = {
