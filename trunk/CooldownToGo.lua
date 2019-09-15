@@ -57,7 +57,7 @@ local DefaultFontName = "Friz Quadrata TT"
 local DefaultFontPath = GameFontNormal:GetFont()
 local DefaultSoundName = "Pong"
 local DefaultSoundFile = [[Interface\AddOns\]] .. AppName .. [[\sounds\pong.ogg]]
-local Icon = [[Interface\Icons\Ability_Hunter_Readiness]]
+local Icon = [[Interface\AddOns\]] .. AppName .. [[\cdtg.tga]]
 
 -- internal vars
 
