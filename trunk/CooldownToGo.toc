@@ -1,4 +1,4 @@
-## Interface: 80205
+## Interface: 90001
 ## Title: CooldownToGo
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
