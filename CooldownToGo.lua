@@ -1,6 +1,5 @@
 --[[
 Name: CooldownToGo
-Revision: $Revision$
 Author(s): mitch0
 Description: Display the reamining cooldown on the last action you tried to use
 License: Public Domain
@@ -9,9 +8,6 @@ License: Public Domain
 local AppName = "CooldownToGo"
 local OptionsAppName = AppName .. "_Options"
 local VERSION = AppName .. "-@project-version@"
---@debug@
-local VERSION = AppName .. "-r" .. ("$Revision$"):match("%d+")
---@end-debug@
 
 local L = LibStub("AceLocale-3.0"):GetLocale(AppName)
 local LSM = LibStub:GetLibrary("LibSharedMedia-3.0", true)
