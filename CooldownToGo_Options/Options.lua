@@ -4,6 +4,7 @@ local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(CooldownToGo.OptionsAppName)
 local LibDualSpec = LibStub("LibDualSpec-1.0", true)
+local Settings = Settings
 
 local MinFontSize = 5
 local MaxFontSize = 240
@@ -237,8 +238,12 @@ local ignoreLists = {
 }
 
 function CooldownToGo:openConfigDialog()
-  InterfaceOptionsFrame_OpenToCategory(self.profiles)
-  InterfaceOptionsFrame_OpenToCategory(self.opts)
+  if Settings then
+    Settings.OpenToCategory(self.AppName)
+  else
+    InterfaceOptionsFrame_OpenToCategory(self.profiles)
+    InterfaceOptionsFrame_OpenToCategory(self.opts)
+  end
 end
 
 function CooldownToGo:getOption(info)
