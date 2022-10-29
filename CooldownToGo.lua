@@ -398,7 +398,7 @@ function CooldownToGo:OnInitialize()
     self:createFrame()
   end
   self:applySettings()
-  self:setupDummyOptions()
+  self:loadOptions()
   self:setupLDB()
   if not self.db.profile.locked then
     self:RegisterEvent("PLAYER_REGEN_DISABLED", function()
@@ -794,47 +794,18 @@ end
 
 -- BEGIN LoD Options muckery
 
-function CooldownToGo:setupDummyOptions()
-  if self.optionsLoaded then
-    return
-  end
-  self.dummyOpts = CreateFrame("Frame", AppName .. "DummyOptions", UIParent)
-  self.dummyOpts:Hide()
-  self.dummyOpts.name = AppName
-  self.dummyOpts:SetScript("OnShow", function(frame)
-    if not self.optionsLoaded then
-      if not InterfaceOptionsFrame:IsVisible() then
-        return -- wtf... Happens if you open the game map and close it with ESC
-      end
-      self:openConfigDialog()
-    else
-      frame:Hide()
-    end
-  end)
-  InterfaceOptions_AddCategory(self.dummyOpts)
-end
-
 function CooldownToGo:loadOptions()
-  if not self.optionsLoaded then
-    self.optionsLoaded = true
-    local loaded, reason = LoadAddOn(OptionsAppName)
-    if not loaded then
-      print("Failed to load " .. tostring(OptionsAppName) .. ": " .. tostring(reason))
-    end
-  end
+  self.optionsLoaded, self.optionsLoadError = LoadAddOn(OptionsAppName)
 end
 
-function CooldownToGo:openConfigDialog(opts)
+function CooldownToGo:openConfigDialog()
   -- this function will be overwritten by the Options module when loaded
-  if not self.optionsLoaded then
-    self:loadOptions()
-    InterfaceAddOnsList_Update()
-    return self:openConfigDialog(opts)
-  end
-  InterfaceOptionsFrame_OpenToCategory(self.dummyOpts)
+  print(OptionsAppName .. " not loaded: " .. tostring(self.optionsLoadError))
+  self.openConfigDialog = function() end
 end
 
 -- END LoD Options muckery
+
 
 -- register slash command
 
