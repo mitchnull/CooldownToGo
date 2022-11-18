@@ -35,7 +35,8 @@ local GetSpellCooldown = GetSpellCooldown
 local GetSpellBaseCooldown = GetSpellBaseCooldown
 
 local GetInventoryItemLink = GetInventoryItemLink
-local GetContainerItemLink = GetContainerItemLink
+local C_Container = C_Container
+local GetContainerItemLink = GetContainerItemLink or C_Container.GetContainerItemLink
 local GetItemInfo = GetItemInfo
 local GetItemCooldown = GetItemCooldown
 local wipe = wipe
@@ -411,7 +412,7 @@ end
 
 function CooldownToGo:OnEnable(first)
   self:SecureHook("UseAction", "checkActionCooldown")
-  self:SecureHook("UseContainerItem", "checkContainerItemCooldown")
+  self:SecureHook(C_Container, "UseContainerItem", "checkContainerItemCooldown")
   self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
   self:SecureHook("UseItemByName", "checkItemCooldown")
   self:SecureHook("CastSpellByName", "checkSpellCooldown") -- only needed for pet spells
