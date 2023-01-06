@@ -10,6 +10,8 @@
 ## X-Category: Combat
 ## X-License: Public Domain
 ## X-RelSite-WoWI: 8601
+## X-WoWI-ID: 8601
+## X-Curse-Project-ID: 13712
 
 #@no-lib-strip@
 embeds.xml
