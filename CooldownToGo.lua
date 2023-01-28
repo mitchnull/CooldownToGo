@@ -38,7 +38,7 @@ local GetInventoryItemLink = GetInventoryItemLink
 local C_Container = C_Container
 local GetContainerItemLink = GetContainerItemLink or C_Container.GetContainerItemLink
 local GetItemInfo = GetItemInfo
-local GetItemCooldown = GetItemCooldown
+local GetItemCooldown = GetItemCooldown or C_Container.GetItemCooldown
 local wipe = wipe
 local PlaySoundFile = PlaySoundFile
 
