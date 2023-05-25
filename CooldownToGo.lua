@@ -386,7 +386,7 @@ function CooldownToGo:OnInitialize()
     LSM:Register("sound", "DooDaDee",
       [[Interface\AddOns\]] .. AppName .. [[\sounds\doodadee.ogg]])
   end
-  self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults)
+  self.db = LibStub("AceDB-3.0"):New("CooldownToGoDB", defaults, true)
   if LibDualSpec then
     LibDualSpec:EnhanceDatabase(self.db, AppName)
   end
