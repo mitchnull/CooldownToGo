@@ -1,4 +1,4 @@
-## Interface: 100206
+## Interface: 40400
 ## Title: CooldownToGo
 ## Notes: Displays the remaing cooldown of the action you tried to use
 ## Author: mitch0
@@ -10,8 +10,6 @@
 ## X-Category: Combat
 ## X-License: Public Domain
 ## X-RelSite-WoWI: 8601
-## X-WoWI-ID: 8601
-## X-Curse-Project-ID: 13712
 
 #@no-lib-strip@
 embeds.xml
