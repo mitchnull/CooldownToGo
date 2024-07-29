@@ -28,10 +28,22 @@ local GetActionInfo = GetActionInfo
 local GetPetActionCooldown = GetPetActionCooldown
 local GetPetActionInfo = GetPetActionInfo
 
-local GetSpellBookItemName = GetSpellBookItemName
-local GetSpellLink = GetSpellLink
-local GetSpellInfo = GetSpellInfo
-local GetSpellCooldown = GetSpellCooldown
+local GetSpellBookItemName = GetSpellBookItemName or C_SpellBook.GetSpellBookItemName
+
+local C_Spell = C_Spell
+local GetSpellLink = GetSpellLink or C_Spell.GetSpellLink
+local GetSpellInfo = GetSpellInfo or function(spellId)
+  if not spellId then
+    return nil
+  end
+
+  local spellInfo = C_Spell.GetSpellInfo(spellId)
+  if spellInfo then
+    return spellInfo.name, nil, spellInfo.iconID, spellInfo.castTime, spellInfo.minRange, spellInfo.maxRange, spellInfo.spellId, spellInfo.originalIconID
+  end
+end
+
+local GetSpellCooldown = GetSpellCooldown or C_Spell.GetSpellCooldown
 local GetSpellBaseCooldown = GetSpellBaseCooldown
 
 local GetInventoryItemLink = GetInventoryItemLink
