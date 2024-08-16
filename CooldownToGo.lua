@@ -22,6 +22,7 @@ local tostring = tostring
 local tonumber = tonumber
 local pairs = pairs
 local GetTime = GetTime
+local LoadAddOn = _G.LoadAddOn or C_AddOns.LoadAddOn
 
 local GetActionInfo = GetActionInfo
 
