@@ -1,4 +1,5 @@
 local CooldownToGo = CooldownToGo
+local GetSpellInfo = CooldownToGo.GetSpellInfo
 local ACD = LibStub("AceConfigDialog-3.0")
 local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")

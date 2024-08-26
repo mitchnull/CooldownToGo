@@ -44,7 +44,17 @@ local GetSpellInfo = GetSpellInfo or function(spellId)
   end
 end
 
-local GetSpellCooldown = GetSpellCooldown or C_Spell.GetSpellCooldown
+local GetSpellCooldown = GetSpellCooldown or function(spellId)
+  if not spellId then
+    return nil
+  end
+
+  local spellCooldown = C_Spell.GetSpellCooldown(spellId)
+  if spellCooldown then
+    return spellCooldown.startTime, spellCooldown.duration, spellCooldown.isEnabled and 1 or nil
+  end
+end
+
 local GetSpellBaseCooldown = GetSpellBaseCooldown
 
 local GetInventoryItemLink = GetInventoryItemLink
@@ -107,6 +117,7 @@ CooldownToGo:SetDefaultModuleState(false)
 CooldownToGo.AppName = AppName
 CooldownToGo.OptionsAppName = OptionsAppName
 CooldownToGo.version = VERSION
+CooldownToGo.GetSpellInfo = GetSpellInfo
 
 local defaults = {
   profile = {
@@ -599,7 +610,7 @@ local function findPetActionIndexForSpell(spell)
 end
 
 function CooldownToGo:checkSpellCooldown(spell)
-  -- print("### spell: " .. tostring(spell))
+  -- print("### checkSpellCooldown: spell: " .. tostring(spell))
   if not spell then return end
   local name, _, texture = GetSpellInfo(spell)
   if not name then
@@ -673,7 +684,10 @@ function CooldownToGo:checkPetActionCooldown(index)
 end
 
 function CooldownToGo:UNIT_SPELLCAST_FAILED(event, unit, name, rank, seq, id)
-  -- print("### unit: " .. tostring(unit) .. ", name: " .. tostring(name) .. ", rank: " .. tostring(rank) .. ", seq: " .. tostring(seq) .. ", id: " .. tostring(id))
+  if not id then
+    id = rank -- patch 8.0.1 changed signature to target, castGUID, spellID
+  end
+  -- print("### unit: " .. tostring(unit) .. ", name: " .. tostring(name) .. ", id: " .. tostring(id))
   if unit == 'player' or unit == 'pet' then
     self:checkSpellCooldown(id)
   end
