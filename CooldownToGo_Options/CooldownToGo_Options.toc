@@ -1,4 +1,4 @@
-## Interface: 110207,11508,50503,20505
+## Interface: 120100,120007,120005,120001,120000,110207,11508,50503,20505
 
 ## Title: CooldownToGo Options
 ## Author: mitch0
