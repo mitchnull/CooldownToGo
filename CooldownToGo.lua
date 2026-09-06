@@ -27,11 +27,20 @@ local LoadAddOn = _G.LoadAddOn or C_AddOns.LoadAddOn
 local GetActionInfo = GetActionInfo
 
 local GetPetActionCooldown = GetPetActionCooldown
-local GetPetActionInfo = GetPetActionInfo
+local RawGetPetActionInfo = GetPetActionInfo
 
 local GetSpellBookItemName = GetSpellBookItemName or C_SpellBook.GetSpellBookItemName
 
 local C_Spell = C_Spell
+local usesDurationObjects = C_Spell and C_Spell.GetSpellCooldownDuration ~= nil
+local issecretvalue = issecretvalue or function() return false end
+-- Normalize Midnight's tuple to the legacy shape used by this addon and its
+-- options. Retail removed the subtext field; spellID is now the seventh value.
+local function GetPetActionInfo(index)
+  if not usesDurationObjects then return RawGetPetActionInfo(index) end
+  local name, texture, isToken, isActive, autoCastAllowed, autoCastEnabled, spellID = RawGetPetActionInfo(index)
+  return name, nil, texture, isToken, isActive, autoCastAllowed, autoCastEnabled, spellID
+end
 local GetSpellLink = GetSpellLink or C_Spell.GetSpellLink
 local GetSpellInfo = GetSpellInfo or function(spellId)
   if not spellId then
@@ -60,7 +69,7 @@ local GetSpellBaseCooldown = GetSpellBaseCooldown
 local GetInventoryItemLink = GetInventoryItemLink
 local C_Container = C_Container
 local GetContainerItemLink = GetContainerItemLink or C_Container.GetContainerItemLink
-local GetItemInfo = GetItemInfo
+local GetItemInfo = GetItemInfo or C_Item.GetItemInfo
 local GetItemCooldown = GetItemCooldown or C_Container.GetItemCooldown
 local wipe = wipe
 local PlaySoundFile = PlaySoundFile
@@ -109,6 +118,9 @@ local soundPlayedAt = 0
 local ignoredSpells = {} -- contains a map of name -> id (as stored in db.profile.ignoreLists.spell). we need to store ids in the db to avoid locale related issues, but we must match by spell name because there is no generic way of "normalizing" all ranks of a spell to a common spellId
 
 local GCD = 1.5
+local successfulCasts = { player = {}, pet = {} }
+local watchedSpells = {}
+local observedCooldowns = {}
 
 CooldownToGo = LibStub("AceAddon-3.0"):NewAddon(AppName, "AceHook-3.0", "AceEvent-3.0")
 local CooldownToGo = CooldownToGo
@@ -118,6 +130,8 @@ CooldownToGo.AppName = AppName
 CooldownToGo.OptionsAppName = OptionsAppName
 CooldownToGo.version = VERSION
 CooldownToGo.GetSpellInfo = GetSpellInfo
+CooldownToGo.GetPetActionInfo = GetPetActionInfo
+CooldownToGo.usesDurationObjects = usesDurationObjects
 
 local defaults = {
   profile = {
@@ -223,6 +237,11 @@ function CooldownToGo:updateLayout()
   end
   self.text:ClearAllPoints()
   self.text:SetPoint(Opposite[db.textPosition], self.frame, "CENTER", textOffsetXY(db.padding, db.textPosition))
+  if self.cooldownText then
+    self.cooldownText:SetJustifyH(self.text:GetJustifyH())
+    self.cooldownText:ClearAllPoints()
+    self.cooldownText:SetPoint(Opposite[db.textPosition], self.frame, "CENTER", textOffsetXY(db.padding, db.textPosition))
+  end
 
   self.icon:ClearAllPoints()
   self.icon:SetPoint(db.textPosition, self.frame, "CENTER", iconOffsetXY(db.padding, db.textPosition))
@@ -256,6 +275,20 @@ function CooldownToGo:createFrame()
   text:SetFont(DefaultFontPath, defaults.profile.fontSize, defaults.profile.fontOutline)
   text:SetText("cdtg")
   self.text = text
+
+  if usesDurationObjects then
+    local cooldown = CreateFrame("Cooldown", "CDTGCountdown", frame)
+    cooldown:SetAllPoints(frame)
+    cooldown:EnableMouse(false)
+    cooldown:SetDrawSwipe(false)
+    cooldown:SetDrawEdge(false)
+    cooldown:SetDrawBling(false)
+    cooldown:SetHideCountdownNumbers(false)
+    cooldown:SetMinimumCountdownDuration(0)
+    self.cooldown = cooldown
+    self.cooldownText = cooldown:GetCountdownFontString()
+    cooldown:Hide()
+  end
 
   if Masque then
     local icon =  CreateFrame("Button", "CDTGButton", frame)
@@ -342,6 +375,9 @@ function CooldownToGo:applyFontSettings()
   if dbFontPath ~= fontPath or db.fontSize ~= fontSize or db.fontOutline ~= fontOutline then
     self.text:SetFont(dbFontPath, db.fontSize, db.fontOutline)
   end
+  if self.cooldownText then
+    self.cooldownText:SetFont(dbFontPath, db.fontSize, db.fontOutline)
+  end
 end
 
 function CooldownToGo:applySettings()
@@ -355,6 +391,9 @@ function CooldownToGo:applySettings()
   self.frame:SetPoint(db.point, UIParent, db.relPoint, db.x, db.y)
   self.frame:SetFrameStrata(db.strata)
   self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
+  if self.cooldownText then
+    self.cooldownText:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
+  end
   self.icon:SetAlpha(db.colorA)
   if LSM then
     self.soundFile = LSM:Fetch("sound", db.warnSoundName)
@@ -375,7 +414,10 @@ end
 function CooldownToGo:lock()
   self.frame:EnableMouse(false)
   self.frameBG:Hide()
-  if isActive then
+  if isActive and self.durationSpell then
+    -- Duration timestamps stay inside the native widget, including on settings changes.
+    self.frame:Show()
+  elseif isActive then
     self:updateStamps(currStart, currDuration, true)
   else
     self.frame:Hide()
@@ -438,7 +480,11 @@ function CooldownToGo:OnEnable(first)
   self:SecureHook("UseAction", "checkActionCooldown")
   self:SecureHook(C_Container, "UseContainerItem", "checkContainerItemCooldown")
   self:SecureHook("UseInventoryItem", "checkInventoryItemCooldown")
-  self:SecureHook("UseItemByName", "checkItemCooldown")
+  if _G.UseItemByName then
+    self:SecureHook("UseItemByName", "checkItemCooldown")
+  elseif C_Item and C_Item.UseItemByName then
+    self:SecureHook(C_Item, "UseItemByName", "checkItemCooldown")
+  end
   self:SecureHook("CastSpellByName", "checkSpellCooldown") -- only needed for pet spells
   self:SecureHook("CastPetAction", "checkPetActionCooldown")
   self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "updateCooldown")
@@ -446,10 +492,21 @@ function CooldownToGo:OnEnable(first)
   self:RegisterEvent("BAG_UPDATE_COOLDOWN", "updateCooldown")
   self:RegisterEvent("PET_BAR_UPDATE_COOLDOWN", "updateCooldown")
   self:RegisterEvent("UNIT_SPELLCAST_FAILED") -- FIXME: RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player", "pet")
+  if usesDurationObjects then
+    self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+  end
   self:applySettings()
 end
 
 function CooldownToGo:OnDisable()
+  self:clearDurationCooldown()
+  isActive = false
+  needUpdate = false
+  lastGetCooldown = nil
+  wipe(successfulCasts.player)
+  wipe(successfulCasts.pet)
+  wipe(watchedSpells)
+  wipe(observedCooldowns)
   if self.frame then
     self.frame:Hide()
   end
@@ -467,9 +524,18 @@ function CooldownToGo:OnUpdate(elapsed)
   if not isActive then
     return
   end
+  if self.durationSpell then
+    self:updateDurationDisplay()
+    return
+  end
   if needUpdate then
     needUpdate = false
     local start, duration = currGetCooldown(currArg)
+    if issecretvalue(start) or issecretvalue(duration) then
+      isActive = false
+      self.frame:Hide()
+      return
+    end
     if currStart ~= start or currDuration ~= duration then
       self:updateStamps(start, duration, false)
     end
@@ -568,6 +634,7 @@ end
 function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, hasCooldown)
   -- printf("### showCooldown: texture: %s, arg: %s", texture, arg)
   local start, duration, enabled = getCooldownFunc(arg)
+  if issecretvalue(start) or issecretvalue(duration) or issecretvalue(enabled) then return end
   -- print("### " .. tostring(texture) .. ", " .. tostring(start) .. ", " .. tostring(duration) .. ", " .. tostring(enabled))
   if not start or enabled ~= 1 or duration <= GCD then
     if hasCooldown and (isReady or not isActive) then
@@ -579,6 +646,7 @@ function CooldownToGo:showCooldown(texture, getCooldownFunc, arg, hasCooldown)
     return
   end
   currGetCooldown, currArg = getCooldownFunc, arg
+  self:clearDurationCooldown()
   isActive = true
   isReady = false
   isAlmostReady = false
@@ -609,9 +677,9 @@ local function findPetActionIndexForSpell(spell)
   end
 end
 
-function CooldownToGo:checkSpellCooldown(spell)
+function CooldownToGo:checkSpellCooldown(spell, failedUnit)
   -- print("### checkSpellCooldown: spell: " .. tostring(spell))
-  if not spell then return end
+  if issecretvalue(spell) or not spell then return end
   local name, _, texture = GetSpellInfo(spell)
   if not name then
      return self:checkPetActionCooldown(findPetActionIndexForSpell(spell))
@@ -627,7 +695,17 @@ function CooldownToGo:checkSpellCooldown(spell)
   else
     if ignoredSpells[name] then return end
   end
-  local baseCooldown = GetSpellBaseCooldown(spell)
+  if usesDurationObjects then
+    watchedSpells[spell] = true
+    -- Secure action hooks run for successful casts too. Only failed unit events
+    -- select modern spell cooldowns; success timestamps supply the grace period.
+    if failedUnit ~= "player" and failedUnit ~= "pet" then return end
+    local succeeded = successfulCasts[failedUnit][spell]
+    if succeeded and GetTime() - succeeded < db.gracePeriod then return end
+    self:showDurationCooldown(spell, texture)
+    return
+  end
+  local baseCooldown = GetSpellBaseCooldown and GetSpellBaseCooldown(spell)
   self:showCooldown(texture, GetSpellCooldown, spell, (baseCooldown and baseCooldown > 0))
 end
 
@@ -662,7 +740,7 @@ function CooldownToGo:checkItemCooldown(item)
   self:showCooldown(texture, GetItemCooldown, itemId)
 end
 
-function CooldownToGo:checkPetActionCooldown(index)
+function CooldownToGo:checkPetActionCooldown(index, failedUnit)
   -- print("### checkPetActionCooldown: " .. tostring(index))
   if not index then return end
   if self.ignoreNext then
@@ -677,7 +755,7 @@ function CooldownToGo:checkPetActionCooldown(index)
   end
   local _, _, texture, _, _, _, _, spellId = GetPetActionInfo(index)
   if spellId then
-    self:checkSpellCooldown(spellId)
+    self:checkSpellCooldown(spellId, failedUnit)
   else
     self:showCooldown(texture, GetPetActionCooldown, index)
   end
@@ -688,16 +766,138 @@ function CooldownToGo:UNIT_SPELLCAST_FAILED(event, unit, name, rank, seq, id)
     id = rank -- patch 8.0.1 changed signature to target, castGUID, spellID
   end
   -- print("### unit: " .. tostring(unit) .. ", name: " .. tostring(name) .. ", id: " .. tostring(id))
-  if unit == 'player' or unit == 'pet' then
-    self:checkSpellCooldown(id)
+  if not issecretvalue(unit) and (unit == 'player' or unit == 'pet') then
+    if unit == 'pet' and not issecretvalue(id) and id then
+      local slot = findPetActionIndexForSpell(GetSpellInfo(id))
+      if slot then
+        self:checkPetActionCooldown(slot, unit)
+        return
+      end
+    end
+    self:checkSpellCooldown(id, unit)
+  end
+end
+
+function CooldownToGo:UNIT_SPELLCAST_SUCCEEDED(event, unit, castGUID, spell)
+  if issecretvalue(unit) or issecretvalue(spell) then return end
+  if successfulCasts[unit] and spell then
+    watchedSpells[spell] = true
+    successfulCasts[unit][spell] = GetTime()
+  end
+end
+
+function CooldownToGo:clearDurationCooldown()
+  self.durationSpell = nil
+  if self.cooldown then
+    self.cooldown:Clear()
+    self.cooldown:Hide()
+    self.text:Show()
+  end
+end
+
+function CooldownToGo:showDurationCooldown(spell, texture)
+  local info = C_Spell.GetSpellCooldown(spell)
+  if not info or not info.isActive then return end
+  local observed = observedCooldowns[spell]
+  if observed and observed.isOnGCD then return end
+  local duration = C_Spell.GetSpellCooldownDuration(spell, true)
+  if not duration then return end
+  self:clearDurationCooldown()
+  self.durationSpell = spell
+  self.durationConfirmed = observed and observed.isActive and not observed.isOnGCD
+  lastGetCooldown = nil
+  currGetCooldown, currArg = nil, nil
+  isActive, isReady, needUpdate = true, false, false
+  self.cooldown:SetCooldownFromDurationObject(duration)
+  self.cooldown:Show()
+  self.text:Hide()
+  self.iconTexture:SetTexture(texture)
+  fadeStamp = GetTime() + db.holdTime
+  finishStamp = nil
+  isHidden = false
+  updateDelay = NormalUpdateDelay
+  self.frame:SetAlpha(1)
+  self.frame:Show()
+end
+
+function CooldownToGo:refreshDurationCooldown(event)
+  if isReady or not self.durationSpell then return end
+  local info = C_Spell.GetSpellCooldown(self.durationSpell)
+  if not info then
+    self:clearDurationCooldown()
+    isActive = false
+    self.frame:Hide()
+    return
+  end
+  -- isOnGCD is only reliable while handling SPELL_UPDATE_COOLDOWN.
+  local onGCD = event == "SPELL_UPDATE_COOLDOWN" and info.isOnGCD
+  if info.isActive and not onGCD then
+    if event == "SPELL_UPDATE_COOLDOWN" then self.durationConfirmed = true end
+    local duration = C_Spell.GetSpellCooldownDuration(self.durationSpell, true)
+    if duration then self.cooldown:SetCooldownFromDurationObject(duration) end
+    return
+  end
+  if onGCD and not self.durationConfirmed then
+    self:clearDurationCooldown()
+    isActive = false
+    if db.locked then self.frame:Hide() end
+    return
+  end
+  -- Readiness is a public API state transition. Never infer it from secret
+  -- timestamps or a native widget callback (which may be suppressed in combat).
+  isReady = true
+  self.cooldown:Hide()
+  self.text:Show()
+  if db.suppressReadyNotif then
+    finishStamp = GetTime()
+  else
+    self.text:SetText(L["Ready"])
+    self.frame:SetAlpha(1)
+    isHidden = false
+    fadeStamp = GetTime()
+    finishStamp = fadeStamp + db.fadeTime
+    if db.warnSound then PlaySoundFile(self.soundFile) end
+  end
+end
+
+function CooldownToGo:updateDurationDisplay()
+  local now = GetTime()
+  if finishStamp and now >= finishStamp then
+    self:clearDurationCooldown()
+    isActive = false
+    self.text:SetText(nil)
+    self.iconTexture:SetTexture(nil)
+    if db.locked then self.frame:Hide() end
+    return
+  end
+  if db.locked and not isHidden and now >= fadeStamp then
+    local alpha = db.fadeTime > 0 and math.max(0, 1 - (now - fadeStamp) / db.fadeTime) or 0
+    self.frame:SetAlpha(alpha)
+    isHidden = alpha == 0
+    updateDelay = isHidden and NormalUpdateDelay or FadingUpdateDelay
   end
 end
 
 function CooldownToGo:updateCooldown(event)
+  if usesDurationObjects and event == "SPELL_UPDATE_COOLDOWN" then
+    for spell in pairs(watchedSpells) do
+      local info = C_Spell.GetSpellCooldown(spell)
+      if info then
+        observedCooldowns[spell] = { isActive = info.isActive, isOnGCD = info.isOnGCD }
+      else
+        observedCooldowns[spell] = nil
+      end
+    end
+  end
+  if self.durationSpell then
+    self:refreshDurationCooldown(event)
+    return
+  end
   -- printf("### updateCooldown: %s", tostring(event))
   if not isActive then
     if lastGetCooldown then
       local start, duration, enabled = lastGetCooldown(lastArg)
+      if issecretvalue(start) or issecretvalue(duration) or issecretvalue(enabled) then return end
       if not start or enabled ~= 1 or duration <= GCD then
         return
       end
