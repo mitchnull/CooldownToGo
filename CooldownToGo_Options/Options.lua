@@ -1,5 +1,7 @@
 local CooldownToGo = CooldownToGo
 local GetSpellInfo = CooldownToGo.GetSpellInfo
+local GetPetActionInfo = CooldownToGo.GetPetActionInfo
+local GetItemInfo = GetItemInfo or C_Item.GetItemInfo
 local ACD = LibStub("AceConfigDialog-3.0")
 local ACR = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions = LibStub("AceDBOptions-3.0")
@@ -87,18 +89,18 @@ local mainOptions = {
     readyTime = {
       type = 'range',
       name = L["Ready time"],
-      desc = L["Show the cooldown again this many seconds before the cooldown expires"],
+      desc = CooldownToGo.usesDurationObjects and "On Midnight, spell notifications and sounds occur when the cooldown is ready. Early spell warnings are unavailable." or L["Show the cooldown again this many seconds before the cooldown expires"],
       min = 0.0,
       softMax = 1.0,
       max = Huge,
       step = 0.1,
-      disabled = function() return CooldownToGo.db.profile.suppressReadyNotif end,
+      disabled = function() return CooldownToGo.usesDurationObjects or CooldownToGo.db.profile.suppressReadyNotif end,
       order = 130,
     },
     gracePeriod = {
       type = 'range',
       name = L["Grace Period"],
-      desc = L["Delay before cooldown display is activated (useful for button-smashers)"],
+      desc = CooldownToGo.usesDurationObjects and "Ignore failed spell attempts for this many seconds after your successful cast (useful for button-smashers)." or L["Delay before cooldown display is activated (useful for button-smashers)"],
       min = 0.0,
       softMax = 1.0,
       max = Huge,
@@ -108,7 +110,7 @@ local mainOptions = {
     warnSound = {
       type = 'toggle',
       name = L["Warning Sound"],
-      desc = L["Play a sound when the cooldown reaches Ready Time"],
+      desc = CooldownToGo.usesDurationObjects and "Play a sound when the spell cooldown is ready." or L["Play a sound when the cooldown reaches Ready Time"],
       order = 132,
     },
     warnSoundName = {
@@ -266,6 +268,9 @@ function CooldownToGo:setColor(info, r, g, b, a)
   db.colorR, db.colorG, db.colorB, db.colorA = r, g, b, a
   if self:IsEnabled() then
     self.text:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
+    if self.cooldownText then
+      self.cooldownText:SetTextColor(db.colorR, db.colorG, db.colorB, db.colorA)
+    end
     self.icon:SetAlpha(db.colorA)
   end
 end
